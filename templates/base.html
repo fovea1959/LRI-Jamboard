@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %}</title>
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
+    {% block style %}{% endblock %}
+  </head>
+  <body>
+    {% block content %}{% endblock %}
+    <script src="/static/jquery-3.7.1.min.js"></script>
+    <script src="/static/bootstrap.bundle.min.js"></script>
+    {% block script %}{% endblock %}
+  </body>
+</html>

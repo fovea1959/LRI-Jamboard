@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Public Scoreboard{% endblock %}
+
+{% block style %}
+<style>
+#contextMenu {
+  position: absolute;
+  display:none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- https://stackoverflow.com/a/68817428 -->
+<div class="container p-0 m-0">
+  <table class="table vh-100 vw-100">
+    <tr>
+      <td>
+        <table class="table table-bordered vh-100">
+          <tr>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+          </tr>
+          <tr>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+          </tr>
+          <tr>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+          </tr>
+          <tr>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+          </tr>
+          <tr>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+            <td class="cm">*</td>
+          </tr>
+        </table>
+      </td>
+      <td>
+        RH
+      </td>
+    </tr>
+  </table>
+</div>
+  <div id="contextMenu" class="dropdown clearfix">
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
+      <li><a tabindex="-1" href="#">Action</a></li>
+      <li><a tabindex="-1" href="#">Another action</a></li>
+      <li><a tabindex="-1" href="#">Something else here</a></li>
+      <li class="divider"></li>
+      <li><a tabindex="-1" href="#">Separated link</a></li>
+    </ul>
+  </div>
+
+
+{% endblock %}
+
+<!-- context menu: https://stackoverflow.com/a/31305343 -->
+{% block script %}
+<script>
+$(function() {
+
+  var $contextMenu = $("#contextMenu");
+
+  $("body").on("contextmenu", "table td", function(e) {
+    $contextMenu.css({
+      display: "block",
+      left: e.pageX,
+      top: e.pageY
+    });
+    return false;
+  });
+
+  $contextMenu.on("click", "a", function() {
+     $contextMenu.hide();
+  });
+
+});
+</script>
+{% endblock %}
