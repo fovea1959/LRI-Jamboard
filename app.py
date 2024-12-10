@@ -3,12 +3,15 @@ import logging
 import sys
 
 from datetime import datetime
+from threading import Lock
 
 import flask
-from flask import Flask, render_template, url_for, redirect, request, flash
+from flask import Flask, render_template, url_for, redirect, request, flash, session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.datastructures import MultiDict
+from flask_socketio import SocketIO, emit, join_room, leave_room, \
+    close_room, rooms, disconnect
 
 import LRIDao as Dao
 import LRIEntities as E
@@ -16,6 +19,16 @@ import LRIEntities as E
 Session = sessionmaker(bind=Dao.engine)
 app = Flask(__name__)
 
+# Set this variable to "threading", "eventlet" or "gevent" to test the
+# different async modes, or leave it set to None for the application to choose
+# the best option based on installed packages.
+async_mode = None
+
+socketio = SocketIO(app, async_mode=async_mode, logger=True, engineio_logger=True)
+thread = None
+thread_lock = Lock()
+
+# https://github.com/miguelgrinberg/Flask-SocketIO
 
 class MyEncoder(json.JSONEncoder):
     def default(self, o):
@@ -34,19 +47,22 @@ class G:
 def get_db_session():
     # https://flask.palletsprojects.com/en/stable/appcontext/#storing-data
     if 'db' not in flask.g:
-        flask.g.db = Session()
-        logging.info("Made session %s %s", flask.g.db, type(flask.g.db))
+        flask.g.db_session = Session()
+        logging.info("Made session %s", flask.g.db_session)
 
-    return flask.g.db
+    return flask.g.db_session
 
 
 @app.teardown_appcontext
 def shutdown_session(response_or_exc):
-    db = flask.g.pop('db', None)
+    db_session = flask.g.pop('db_session', None)
 
-    if db is not None:
-        logging.info("Commiting session %s %s", db, type(db))
-        db.commit()
+    if db_session is not None:
+        if db_session.new or db_session.deleted or db_session.dirty:
+            logging.info("Session %s is being committed", db_session)
+            db_session.commit()
+        else:
+            logging.info("Session %s is clean, no commit", db_session)
 
 
 @app.errorhandler(NoResultFound)
@@ -79,9 +95,17 @@ def index():
     return render_template("index.html", team_rows = data)
 
 
+@socketio.on('*')
+def catch_all(event, data):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': [event, data], 'count': session['receive_count']})
+
+
 def main():
     app.secret_key = 'super secret key'
-    app.run(debug=True)
+    # app.run(debug=True)
+    socketio.run(app, allow_unsafe_werkzeug=True)
 
 
 class CustomLogFormatter(logging.Formatter):

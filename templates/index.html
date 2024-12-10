@@ -9,12 +9,30 @@
   display:none;
 }
 </style>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+
+$(document).ready(function() {
+  // Connect to the Socket.IO server.
+  // The connection URL has the following format, relative to the current page:
+  //     http[s]://<domain>:<port>[/<namespace>]
+  var socket = io();
+
+  // Event handler for new connections.
+  // The callback function is invoked when a connection with the
+  // server is established.
+  socket.on('connect', function() {
+      socket.emit('my_event', {data: 'I\'m connected!'});
+  });
+});
+
+</script>
 {% endblock %}
 
 {% block content %}
 <!-- https://stackoverflow.com/a/68817428 -->
 <div class="container p-0 m-0">
-  <table class="table vh-100 vw-100 teams">
+  <table class="table vh-100 vw-100">
     <tr>
       <td class="p-0 m-0 col-9">
         <table class="table table-bordered vh-100" style="table-layout: fixed;">
@@ -23,12 +41,13 @@
           {% for g in row %}
             {% set team=g.team %}
             {% if team is none %}
-              <td class="">*</td>
+              <td class=""></td>
             {% else %}
               <td class="cm" id="team-{{team.team_number}}">
                 <div class="h1">{{ team.team_number }}</div>
                 <div class="h6">{{ team.team_name }}</div>
                 <div>{{ team.city }}</div>
+                <div id="team-{{team.team_number}}-status"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -57,12 +76,12 @@
 
 <!-- context menu: https://stackoverflow.com/a/31305343 -->
 {% block script %}
-<script>
+<script type="text/javascript" charset="utf-8">
 $(function() {
 
   var $contextMenu = $("#contextMenu");
 
-  $("body").on("contextmenu", "table .cm", function(e) {
+  $("body").on("click", "table .cm", function(e) {
     $contextMenu.css({
       display: "block",
       left: e.pageX,
