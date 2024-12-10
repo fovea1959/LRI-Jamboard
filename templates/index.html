@@ -14,63 +14,29 @@
 {% block content %}
 <!-- https://stackoverflow.com/a/68817428 -->
 <div class="container p-0 m-0">
-  <table class="table vh-100 vw-100">
+  <table class="table vh-100 vw-100 teams">
     <tr>
-      <td>
-        <table class="table table-bordered vh-100">
+      <td class="p-0 m-0 col-9">
+        <table class="table table-bordered vh-100" style="table-layout: fixed;">
+        {% for row in team_rows %}
           <tr>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
+          {% for g in row %}
+            {% set team=g.team %}
+            {% if team is none %}
+              <td class="">*</td>
+            {% else %}
+              <td class="cm" id="team-{{team.team_number}}">
+                <div class="h1">{{ team.team_number }}</div>
+                <div class="h6">{{ team.team_name }}</div>
+                <div>{{ team.city }}</div>
+              </td>
+            {% endif %}
+          {% endfor %}
           </tr>
-          <tr>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-          </tr>
-          <tr>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-          </tr>
-          <tr>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-          </tr>
-          <tr>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-            <td class="cm">*</td>
-          </tr>
+        {% endfor %}
         </table>
       </td>
-      <td>
+      <td class="col-3">
         RH
       </td>
     </tr>
@@ -96,7 +62,7 @@ $(function() {
 
   var $contextMenu = $("#contextMenu");
 
-  $("body").on("contextmenu", "table td", function(e) {
+  $("body").on("contextmenu", "table .cm", function(e) {
     $contextMenu.css({
       display: "block",
       left: e.pageX,

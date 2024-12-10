@@ -25,3 +25,12 @@ class Base(DeclarativeBase):
         if at_least_one_attached_attribute:
             return f"<{self.__class__.__name__}({','.join(field_strings)})>"
         return f"<{self.__class__.__name__} {id(self)}>"
+
+
+class Team(Base):
+    __tablename__ = 'teams'
+
+    team_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_name: Mapped[str] = mapped_column(Text)
+    school_name: Mapped[str] = mapped_column(Text)
+    city: Mapped[str] = mapped_column(Text)

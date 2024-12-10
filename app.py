@@ -1,6 +1,8 @@
-import sys
-from datetime import datetime
+import json
 import logging
+import sys
+
+from datetime import datetime
 
 import flask
 from flask import Flask, render_template, url_for, redirect, request, flash
@@ -13,6 +15,11 @@ import LRIEntities as E
 
 Session = sessionmaker(bind=Dao.engine)
 app = Flask(__name__)
+
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, o):
+        return o.__dict__
 
 
 class G:
@@ -47,9 +54,29 @@ def no_result_found_handler(error):
     return render_template('404.html'), 404
 
 
+def to_matrix(l: list, n_cols: int):
+    """https://stackoverflow.com/a/14681687"""
+    return [l[i:i + n_cols] for i in range(0, len(l), n_cols)]
+
+
 @app.route('/')
 def index():
-    return render_template("index.html")
+    data = []
+    for item in get_db_session().query(E.Team).all():
+        g = G(team=item)
+        data.append(g)
+    n_rows, n_cols = (5, 8)
+    if len(data) < 36:
+        n_rows, n_cols = (5, 7)
+    elif len(data) >= 42:
+        n_rows, n_cols = (6, 8)
+    elif len(data) > 40:
+        n_rows, n_cols = (6, 7)
+    for i in range(len(data), n_rows * n_cols):
+        data.append(G(team=None))
+    data = to_matrix(data, n_cols)
+
+    return render_template("index.html", team_rows = data)
 
 
 def main():
