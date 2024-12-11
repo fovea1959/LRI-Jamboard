@@ -11,6 +11,10 @@ from sqlalchemy.orm.base import Mapped
 
 
 class Base(DeclarativeBase):
+    # https://stackoverflow.com/a/11884806
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
     def _repr(self, **fields: typing.Dict[str, typing.Any]) -> str:
         # Helper for __repr__
         field_strings = []

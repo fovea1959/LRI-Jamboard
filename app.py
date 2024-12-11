@@ -111,6 +111,14 @@ def test():
 
 
 @socketio.event
+def send_teams(message):
+    logging.info("got send_teams")
+    for item in get_db_session().query(E.Team).all():
+        emit('team', item.as_dict())
+
+
+
+@socketio.event
 def test_event(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('test_response',
@@ -203,6 +211,7 @@ def test_disconnect():
 
 def main():
     app.secret_key = 'super secret key'
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     socketio.run(app, allow_unsafe_werkzeug=True)
 
 
