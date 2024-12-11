@@ -2,14 +2,12 @@ import json
 import logging
 import sys
 
-from datetime import datetime
 from threading import Lock
 
 import flask
 from flask import Flask, render_template, url_for, redirect, request, flash, session, copy_current_request_context
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from werkzeug.datastructures import MultiDict
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 
@@ -28,7 +26,6 @@ socketio = SocketIO(app, async_mode=async_mode, logger=True, engineio_logger=Tru
 thread = None
 thread_lock = Lock()
 
-# https://github.com/miguelgrinberg/Flask-SocketIO
 
 class MyEncoder(json.JSONEncoder):
     def default(self, o):
@@ -49,7 +46,6 @@ def get_db_session():
     if 'db' not in flask.g:
         flask.g.db_session = Session()
         logging.info("Made session %s", flask.g.db_session)
-
     return flask.g.db_session
 
 
@@ -70,11 +66,6 @@ def no_result_found_handler(error):
     return render_template('404.html'), 404
 
 
-def to_matrix(l: list, n_cols: int):
-    """https://stackoverflow.com/a/14681687"""
-    return [l[i:i + n_cols] for i in range(0, len(l), n_cols)]
-
-
 @app.route('/')
 def index():
     data = []
@@ -90,7 +81,9 @@ def index():
         n_rows, n_cols = (6, 7)
     for i in range(len(data), n_rows * n_cols):
         data.append(G(team=None))
-    data = to_matrix(data, n_cols)
+
+    """https://stackoverflow.com/a/14681687"""
+    data = [data[i:i + n_cols] for i in range(0, len(data), n_cols)]
 
     return render_template("index.html", team_rows = data)
 
@@ -98,7 +91,7 @@ def index():
 @socketio.on('*')
 def catch_all(event, data):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': [event, data], 'count': session['receive_count']})
 
 
@@ -108,7 +101,7 @@ def background_thread():
     while True:
         socketio.sleep(10)
         count += 1
-        socketio.emit('my_response',
+        socketio.emit('test_response',
                       {'data': 'Server generated event', 'count': count})
 
 
@@ -118,16 +111,16 @@ def test():
 
 
 @socketio.event
-def my_event(message):
+def test_event(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': message['data'], 'count': session['receive_count']})
 
 
 @socketio.event
-def my_broadcast_event(message):
+def test_broadcast_event(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': message['data'], 'count': session['receive_count']},
          broadcast=True)
 
@@ -136,7 +129,7 @@ def my_broadcast_event(message):
 def join(message):
     join_room(message['room'])
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': 'In rooms: ' + ', '.join(rooms()),
           'count': session['receive_count']})
 
@@ -145,7 +138,7 @@ def join(message):
 def leave(message):
     leave_room(message['room'])
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': 'In rooms: ' + ', '.join(rooms()),
           'count': session['receive_count']})
 
@@ -153,16 +146,16 @@ def leave(message):
 @socketio.on('close_room')
 def on_close_room(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response', {'data': 'Room ' + message['room'] + ' is closing.',
+    emit('test_response', {'data': 'Room ' + message['room'] + ' is closing.',
                          'count': session['receive_count']},
          to=message['room'])
     close_room(message['room'])
 
 
 @socketio.event
-def my_room_event(message):
+def test_room_event(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': message['data'], 'count': session['receive_count']},
          to=message['room'])
 
@@ -170,7 +163,7 @@ def my_room_event(message):
 @socketio.on('*')
 def catch_all(event, data):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
+    emit('test_response',
          {'data': [event, data], 'count': session['receive_count']})
 
 
@@ -184,14 +177,14 @@ def disconnect_request():
     # for this emit we use a callback function
     # when the callback function is invoked we know that the message has been
     # received and it is safe to disconnect
-    emit('my_response',
+    emit('test_response',
          {'data': 'Disconnected!', 'count': session['receive_count']},
          callback=can_disconnect)
 
 
 @socketio.event
-def my_ping():
-    emit('my_pong')
+def test_ping():
+    emit('test_pong')
 
 
 @socketio.event
@@ -200,7 +193,7 @@ def connect():
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(background_thread)
-    emit('my_response', {'data': 'Connected', 'count': 0})
+    emit('test_response', {'data': 'Connected', 'count': 0})
 
 
 @socketio.on('disconnect')
@@ -208,10 +201,8 @@ def test_disconnect():
     print('Client disconnected', request.sid)
 
 
-
 def main():
     app.secret_key = 'super secret key'
-    # app.run(debug=True)
     socketio.run(app, allow_unsafe_werkzeug=True)
 
 

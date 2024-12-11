@@ -9,7 +9,7 @@
   display:none;
 }
 </style>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+<script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
 
 $(document).ready(function() {
@@ -22,7 +22,7 @@ $(document).ready(function() {
   // The callback function is invoked when a connection with the
   // server is established.
   socket.on('connect', function() {
-      socket.emit('my_event', {data: 'I\'m connected!'});
+      socket.emit('lri_event', {data: 'LRI page connected!'});
   });
 });
 
