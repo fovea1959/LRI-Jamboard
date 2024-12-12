@@ -2,15 +2,43 @@
 
 {% block title %}Public Scoreboard{% endblock %}
 
-{% block style %}
+{% block head %}
 <style>
 #contextMenu {
   position: absolute;
   display:none;
 }
+
+// see https://stackoverflow.com/a/27704409 for why we include the table id
+
+#team-table .x-lri-t-weighed {
+  background-color: #ffffff;
+}
+
+#team-table .x-lri-t-inspected {
+  background-color: #80ff80;
+}
+
+#team-table .x-lri-t- {
+  background-color: #808080;
+}
+
+#team-table .x-lri-blank {
+  background-color: #808080;
+}
+
+#page-table .x-lri-blank {
+  background-color: #808080;
+}
 </style>
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
+// https://stackoverflow.com/a/53190845 slightly modified the regexp
+function removeClassStartingWith(node, begin) {
+  node.removeClass (function (index, className) {
+    return (className.match ( new RegExp("\\b"+begin+"\\S*", "g") ) || []).join(' ');
+  });
+}
 
 $(document).ready(function() {
   // Connect to the Socket.IO server.
@@ -31,7 +59,13 @@ $(document).ready(function() {
   // to the client. The data is then displayed in the "Received"
   // section of the page.
   socket.on('team', function(msg, cb) {
-      $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
+      // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
+      var team_number = msg.team_number.toString();
+
+      $('#t-' + team_number + '-status').text(msg.status);
+
+      removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
+      $('#t-' + team_number).addClass('x-lri-t-' + msg.status.toLowerCase());
       if (cb)
           cb();
   });
@@ -40,25 +74,25 @@ $(document).ready(function() {
 </script>
 {% endblock %}
 
-{% block content %}
+{% block body %}
 <!-- https://stackoverflow.com/a/68817428 -->
 <div class="container p-0 m-0">
-  <table class="table vh-100 vw-100">
+  <table class="table vh-100 vw-100" id="page-table">
     <tr>
       <td class="p-0 m-0 col-9">
-        <table class="table table-bordered vh-100" style="table-layout: fixed;">
+        <table id="team-table" class="table table-bordered vh-100" style="table-layout: fixed;">
         {% for row in team_rows %}
           <tr>
           {% for g in row %}
             {% set team=g.team %}
             {% if team is none %}
-              <td class=""></td>
+              <td class="x-lri-blank"></td>
             {% else %}
-              <td class="cm" id="team-{{team.team_number}}">
+              <td class="x-lri-t- cm" id="t-{{team.team_number}}">
                 <div class="h1">{{ team.team_number }}</div>
                 <div class="h6">{{ team.team_name }}</div>
-                <div>{{ team.city }}</div>
-                <div id="team-{{team.team_number}}-status"></div>
+                <div class="h6">{{ team.city }}</div>
+                <div id="t-{{team.team_number}}-status"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -66,8 +100,7 @@ $(document).ready(function() {
         {% endfor %}
         </table>
       </td>
-      <td class="col-3" id="log">
-      </td>
+      <td class="col-3 x-lri-blank">&nbsp;</td>
     </tr>
   </table>
 </div>
@@ -82,10 +115,7 @@ $(document).ready(function() {
   </div>
 
 
-{% endblock %}
-
 <!-- context menu: https://stackoverflow.com/a/31305343 -->
-{% block script %}
 <script type="text/javascript" charset="utf-8">
 $(function() {
 

@@ -5,7 +5,7 @@ import sqlalchemy.orm.exc
 
 from typing import List, Optional
 
-from sqlalchemy import Integer, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Integer, Text, DateTime, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import DeclarativeBase, mapped_column, relationship
 from sqlalchemy.orm.base import Mapped
 
@@ -38,3 +38,16 @@ class Team(Base):
     team_name: Mapped[str] = mapped_column(Text)
     school_name: Mapped[str] = mapped_column(Text)
     city: Mapped[str] = mapped_column(Text)
+
+    weighed: Mapped[bool] = mapped_column(Boolean)
+    inspected: Mapped[bool] = mapped_column(Boolean)
+
+
+class Inspector(Base):
+    __tablename__ = 'inspectors'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text)
+    with_team: Mapped[Optional[int]] = mapped_column(Integer)
+    when: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)

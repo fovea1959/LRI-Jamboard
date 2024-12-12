@@ -43,9 +43,9 @@ class G:
 
 def get_db_session():
     # https://flask.palletsprojects.com/en/stable/appcontext/#storing-data
-    if 'db' not in flask.g:
+    if 'db_session' not in flask.g:
         flask.g.db_session = Session()
-        logging.info("Made session %s", flask.g.db_session)
+        logging.info("made session %s", flask.g.db_session)
     return flask.g.db_session
 
 
@@ -55,10 +55,10 @@ def shutdown_session(response_or_exc):
 
     if db_session is not None:
         if db_session.new or db_session.deleted or db_session.dirty:
-            logging.info("Session %s is being committed", db_session)
+            logging.info("session %s is being committed", db_session)
             db_session.commit()
         else:
-            logging.info("Session %s is clean, no commit", db_session)
+            logging.info("session %s is clean, no commit", db_session)
 
 
 @app.errorhandler(NoResultFound)
@@ -79,6 +79,7 @@ def index():
         n_rows, n_cols = (6, 8)
     elif len(data) > 40:
         n_rows, n_cols = (6, 7)
+    # make last row complete
     for i in range(len(data), n_rows * n_cols):
         data.append(G(team=None))
 
@@ -90,9 +91,7 @@ def index():
 
 @socketio.on('*')
 def catch_all(event, data):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': [event, data], 'count': session['receive_count']})
+    logging.info ("catch_all got %s: %s", event, data)
 
 
 def background_thread():
@@ -114,8 +113,15 @@ def test():
 def send_teams(message):
     logging.info("got send_teams")
     for item in get_db_session().query(E.Team).all():
-        emit('team', item.as_dict())
-
+        d = item.as_dict()
+        status = ""
+        if item.weighed:
+            if item.inspected:
+                status = "Inspected"
+            else:
+                status = "Weighed"
+        d['status'] = status
+        emit('team', d)
 
 
 @socketio.event
@@ -212,6 +218,7 @@ def test_disconnect():
 def main():
     app.secret_key = 'super secret key'
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    app.debug = True
     socketio.run(app, allow_unsafe_werkzeug=True)
 
 
