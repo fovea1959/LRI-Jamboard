@@ -31,47 +31,6 @@
   background-color: #808080;
 }
 </style>
-<script src="/static/socket.io.min.js"></script>
-<script type="text/javascript" charset="utf-8">
-// https://stackoverflow.com/a/53190845 slightly modified the regexp
-function removeClassStartingWith(node, begin) {
-  node.removeClass (function (index, className) {
-    return (className.match ( new RegExp("\\b"+begin+"\\S*", "g") ) || []).join(' ');
-  });
-}
-
-$(document).ready(function() {
-  // Connect to the Socket.IO server.
-  // The connection URL has the following format, relative to the current page:
-  //     http[s]://<domain>:<port>[/<namespace>]
-  var socket = io();
-
-  // Event handler for new connections.
-  // The callback function is invoked when a connection with the
-  // server is established.
-  socket.on('connect', function() {
-      socket.emit('lri_event', {data: 'LRI page connected!'});
-      socket.emit('send_teams', {});
-  });
-
-  // Event handler for server sent data.
-  // The callback function is invoked whenever the server emits data
-  // to the client. The data is then displayed in the "Received"
-  // section of the page.
-  socket.on('team', function(msg, cb) {
-      // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
-      var team_number = msg.team_number.toString();
-
-      $('#t-' + team_number + '-status').text(msg.status);
-
-      removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
-      $('#t-' + team_number).addClass('x-lri-t-' + msg.status.toLowerCase());
-      if (cb)
-          cb();
-  });
-});
-
-</script>
 {% endblock %}
 
 {% block body %}
@@ -100,22 +59,30 @@ $(document).ready(function() {
         {% endfor %}
         </table>
       </td>
-      <td class="col-3 x-lri-blank">&nbsp;</td>
+      <td class="col-3 x-lri-blank">
+        <div id="status"></div>
+        <div id="inspectors">
+        {% for i in inspectors %}
+          <div class="x-lri-i-available">
+              {{ i.name }}: <span id="i-{{ i.id }}-status"></span>
+          </div>
+        {% endfor %}
+        </div>
+      </td>
     </tr>
   </table>
 </div>
-  <div id="contextMenu" class="dropdown clearfix">
-    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
-      <li><a tabindex="-1" href="#">Action</a></li>
-      <li><a tabindex="-1" href="#">Another action</a></li>
-      <li><a tabindex="-1" href="#">Something else here</a></li>
-      <li class="divider"></li>
-      <li><a tabindex="-1" href="#">Separated link</a></li>
-    </ul>
-  </div>
-
-
+<div id="contextMenu" class="dropdown clearfix">
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
+    <li><a tabindex="-1" href="#">Action</a></li>
+    <li><a tabindex="-1" href="#">Another action</a></li>
+    <li><a tabindex="-1" href="#">Something else here</a></li>
+    <li class="divider"></li>
+    <li><a tabindex="-1" href="#">Separated link</a></li>
+  </ul>
+</div>
 <!-- context menu: https://stackoverflow.com/a/31305343 -->
+<script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
 $(function() {
 
@@ -135,5 +102,50 @@ $(function() {
   });
 
 });
+
+// https://stackoverflow.com/a/53190845 slightly modified the regexp
+function removeClassStartingWith(node, begin) {
+  node.removeClass (function (index, className) {
+    return (className.match ( new RegExp("\\b"+begin+"\\S*", "g") ) || []).join(' ');
+  });
+}
+
+$(document).ready(function() {
+  // Connect to the Socket.IO server.
+  // The connection URL has the following format, relative to the current page:
+  //     http[s]://<domain>:<port>[/<namespace>]
+  var socket = io();
+
+  // Event handler for new connections.
+  // The callback function is invoked when a connection with the
+  // server is established.
+  socket.on('connect', function() {
+      socket.emit('lri_event', {data: 'LRI page connected!'});
+      socket.emit('send_teams', {});
+      socket.emit('send_inspectors', {});
+  });
+
+  socket.on('team', function(msg, cb) {
+      // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
+      var team_number = msg.team_number.toString();
+
+      $('#t-' + team_number + '-status').text(msg.status);
+
+      removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
+      $('#t-' + team_number).addClass('x-lri-t-' + msg.status.toLowerCase());
+      if (cb)
+          cb();
+  });
+
+  socket.on('inspector', function(msg, cb) {
+      var inspector_id = msg.id.toString();
+
+      $('#i-' + inspector_id + '-status').text(msg.status_text);
+
+      if (cb)
+          cb();
+  });
+});
+
 </script>
 {% endblock %}

@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import sys
@@ -34,15 +35,17 @@ def main(argv):
         session.commit()
 
         n = [
-            'Tearesa W',
-            'Doug W',
-            'Kevin S',
-            'Greg F',
+            ('Tearesa W', 'available', None),
+            ('Doug W', 'on break', '20241213 11:00'),
+            ('Kevin S', 'available', None),
+            ('Greg F', 'available', None),
         ]
-        for n1 in n:
+        for n1, s, when_str in n:
+            when = None if when_str is None else datetime.datetime.fromisoformat(when_str)
             inspector = E.Inspector(
                 name=n1,
-                status='available',
+                status=s,
+                when=when,
             )
             session.add(inspector)
         session.commit()

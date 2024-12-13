@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import sys
@@ -14,6 +15,29 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
 import LRIDao as Dao
 import LRIEntities as E
 
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        if isinstance(o, datetime.timedelta):
+            return o.total_seconds()
+        return o.__dict__
+
+
+class MyAwesomeJsonWrapper(object):
+    """https://github.com/miguelgrinberg/flask-socketio/issues/274#issuecomment-231206374"""
+    @staticmethod
+    def dumps(*args, **kwargs):
+        if 'cls' not in kwargs:
+            kwargs['cls'] = MyEncoder
+        return json.dumps(*args, **kwargs)
+
+    @staticmethod
+    def loads(*args, **kwargs):
+        return json.loads(*args, **kwargs)
+
+
 Session = sessionmaker(bind=Dao.engine)
 app = Flask(__name__)
 
@@ -22,14 +46,9 @@ app = Flask(__name__)
 # the best option based on installed packages.
 async_mode = None
 
-socketio = SocketIO(app, async_mode=async_mode, logger=True, engineio_logger=True)
+socketio = SocketIO(app, async_mode=async_mode, logger=True, engineio_logger=True, json=MyAwesomeJsonWrapper)
 thread = None
 thread_lock = Lock()
-
-
-class MyEncoder(json.JSONEncoder):
-    def default(self, o):
-        return o.__dict__
 
 
 class G:
@@ -86,7 +105,9 @@ def index():
     """https://stackoverflow.com/a/14681687"""
     data = [data[i:i + n_cols] for i in range(0, len(data), n_cols)]
 
-    return render_template("index.html", team_rows = data)
+    inspectors = [i for i in get_db_session().query(E.Inspector).all()]
+
+    return render_template("index.html", team_rows=data, inspectors=inspectors)
 
 
 @socketio.on('*')
@@ -95,13 +116,13 @@ def catch_all(event, data):
 
 
 def background_thread():
+    app.app_context()
     """Example of how to send server generated events to clients."""
-    count = 0
+    db_session = Session()
     while True:
-        socketio.sleep(10)
-        count += 1
-        socketio.emit('test_response',
-                      {'data': 'Server generated event', 'count': count})
+        logging.info("updating inspectors")
+        do_send_inspectors(db_session=db_session, emitter=socketio.emit)
+        socketio.sleep(60)
 
 
 @app.route('/test')
@@ -114,15 +135,19 @@ def send_teams(message):
     logging.info("got send_teams")
     for item in get_db_session().query(E.Team).all():
         d = item.as_dict()
-        status = ""
-        if item.weighed:
-            if item.inspected:
-                status = "Inspected"
-            else:
-                status = "Weighed"
-        d['status'] = status
         emit('team', d)
 
+
+@socketio.event
+def send_inspectors(message):
+    logging.info("got send_inspectors")
+    do_send_inspectors(db_session=get_db_session())
+
+
+def do_send_inspectors(db_session=None, emitter=emit):
+    for item in db_session.query(E.Inspector).all():
+        d = item.as_dict()
+        emitter('inspector', d)
 
 @socketio.event
 def test_event(message):

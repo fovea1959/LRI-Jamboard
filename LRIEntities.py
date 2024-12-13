@@ -42,6 +42,21 @@ class Team(Base):
     weighed: Mapped[bool] = mapped_column(Boolean)
     inspected: Mapped[bool] = mapped_column(Boolean)
 
+    @property
+    def status(self):
+        rv = ""
+        if self.weighed:
+            if self.inspected:
+                rv = "Inspected"
+            else:
+                rv = "Weighed"
+        return rv
+
+    def as_dict(self):
+        rv = super().as_dict()
+        rv['status'] = self.status
+        return rv
+
 
 class Inspector(Base):
     __tablename__ = 'inspectors'
@@ -51,3 +66,24 @@ class Inspector(Base):
     status: Mapped[str] = mapped_column(Text)
     with_team: Mapped[Optional[int]] = mapped_column(Integer)
     when: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+
+    @property
+    def status_text(self):
+        rv = self.status
+        if self.with_team is not None:
+            rv = rv + f" with {self.with_team}"
+        if self.when is not None:
+            rv = rv + f" since {self.when} ({self.how_long})"
+        return rv
+
+    @property
+    def how_long(self):
+        if self.when is None:
+            return None
+        return datetime.datetime.now() - self.when
+
+    def as_dict(self):
+        rv = super().as_dict()
+        rv['status_text'] = self.status_text
+        rv['how_long'] = self.how_long
+        return rv
