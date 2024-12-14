@@ -15,7 +15,7 @@
   background-color: #ffffff;
 }
 
-#team-table .x-lri-t-inspected {
+#team-table .x-lri-t-passed-inspection {
   background-color: #80ff80;
 }
 
@@ -28,7 +28,7 @@
 }
 
 #page-table .x-lri-blank {
-  background-color: #808080;
+  // background-color: #808080;
 }
 </style>
 {% endblock %}
@@ -47,7 +47,7 @@
             {% if team is none %}
               <td class="x-lri-blank"></td>
             {% else %}
-              <td class="x-lri-t- cm" id="t-{{team.team_number}}">
+              <td class="x-lri-t- cm" id="t-{{team.team_number}}" onClick="showTeamMenu({{ team.team_number }})">
                 <div class="h1">{{ team.team_number }}</div>
                 <div class="h6">{{ team.team_name }}</div>
                 <div class="h6">{{ team.city }}</div>
@@ -60,7 +60,7 @@
         </table>
       </td>
       <td class="col-3 x-lri-blank">
-        <div id="status"></div>
+        <div id="overall-status" class="h1">&nbsp;</div>
         <div id="inspectors">
         {% for i in inspectors %}
           <div class="x-lri-i-available">
@@ -72,42 +72,43 @@
     </tr>
   </table>
 </div>
-<div id="contextMenu" class="dropdown clearfix">
-  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
-    <li><a tabindex="-1" href="#">Action</a></li>
-    <li><a tabindex="-1" href="#">Another action</a></li>
-    <li><a tabindex="-1" href="#">Something else here</a></li>
-    <li class="divider"></li>
-    <li><a tabindex="-1" href="#">Separated link</a></li>
-  </ul>
+
+<!-- https://www.geeksforgeeks.org/how-to-create-modal-using-bootstrap-5/ -->
+<div class="modal fade" id="GFG">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Modal for <span id="GFG-team-number"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>I am a Modal</p>
+        <p>Bootstrap Modal Via Data Attributes</p>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- context menu: https://stackoverflow.com/a/31305343 -->
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
-$(function() {
 
-  var $contextMenu = $("#contextMenu");
-
-  $("body").on("click", "table .cm", function(e) {
-    $contextMenu.css({
-      display: "block",
-      left: e.pageX,
-      top: e.pageY
-    });
-    return false;
-  });
-
-  $contextMenu.on("click", "a", function() {
-     $contextMenu.hide();
-  });
-
-});
+function makeClassName(text) {
+  return text.replaceAll(new RegExp("\\s+", "g"), "-").toLowerCase();
+}
 
 // https://stackoverflow.com/a/53190845 slightly modified the regexp
 function removeClassStartingWith(node, begin) {
   node.removeClass (function (index, className) {
     return (className.match ( new RegExp("\\b"+begin+"\\S*", "g") ) || []).join(' ');
   });
+}
+
+function showTeamMenu(team_number) {
+  $('#GFG-team-number').text(team_number.toString())
+  let modal = new bootstrap.Modal(document.getElementById('GFG'));
+  modal.show();
 }
 
 $(document).ready(function() {
@@ -123,6 +124,7 @@ $(document).ready(function() {
       socket.emit('lri_event', {data: 'LRI page connected!'});
       socket.emit('send_teams', {});
       socket.emit('send_inspectors', {});
+      socket.emit('send_status', {});
   });
 
   socket.on('team', function(msg, cb) {
@@ -132,7 +134,7 @@ $(document).ready(function() {
       $('#t-' + team_number + '-status').text(msg.status);
 
       removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
-      $('#t-' + team_number).addClass('x-lri-t-' + msg.status.toLowerCase());
+      $('#t-' + team_number).addClass('x-lri-t-' + makeClassName(msg.status));
       if (cb)
           cb();
   });
@@ -141,6 +143,16 @@ $(document).ready(function() {
       var inspector_id = msg.id.toString();
 
       $('#i-' + inspector_id + '-status').text(msg.status_text);
+
+      if (cb)
+          cb();
+  });
+
+  socket.on('status', function(msg, cb) {
+      var total = msg.total;
+      var complete = msg.complete;
+
+      $('#overall-status').text(complete + " of " + total + " passed.");
 
       if (cb)
           cb();

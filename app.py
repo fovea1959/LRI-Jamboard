@@ -149,6 +149,19 @@ def do_send_inspectors(db_session=None, emitter=emit):
         d = item.as_dict()
         emitter('inspector', d)
 
+
+@socketio.event
+def send_status(message):
+    complete = 0
+    total = 0
+    for item in get_db_session().query(E.Team).all():
+        total += 1
+        if item.status == item.STATUS_PASSED:
+            complete += 1
+    rv = G(total=total, complete=complete)
+    emit('status', rv)
+
+
 @socketio.event
 def test_event(message):
     session['receive_count'] = session.get('receive_count', 0) + 1

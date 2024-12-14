@@ -34,6 +34,10 @@ class Base(DeclarativeBase):
 class Team(Base):
     __tablename__ = 'teams'
 
+    STATUS_WEIGHED = "Weighed"
+    STATUS_PASSED = "Passed Inspection"
+    STATUS_NONE = ""
+
     team_number: Mapped[int] = mapped_column(Integer, primary_key=True)
     team_name: Mapped[str] = mapped_column(Text)
     school_name: Mapped[str] = mapped_column(Text)
@@ -44,12 +48,12 @@ class Team(Base):
 
     @property
     def status(self):
-        rv = ""
+        rv = self.STATUS_NONE
         if self.weighed:
             if self.inspected:
-                rv = "Inspected"
+                rv = self.STATUS_PASSED
             else:
-                rv = "Weighed"
+                rv = self.STATUS_WEIGHED
         return rv
 
     def as_dict(self):
