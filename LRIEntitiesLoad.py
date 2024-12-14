@@ -24,8 +24,8 @@ def main(argv):
         for team_dict in blue_alliance:  # type: dict
             team_number = team_dict['team_number']
             team = E.Team(
-                team_number=team_number,
-                team_name=team_dict['nickname'],
+                number=team_number,
+                name=team_dict['nickname'],
                 school_name=team_dict['school_name'],
                 city=team_dict['city'],
                 weighed=team_number in (1940, 3620),

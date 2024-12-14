@@ -169,7 +169,7 @@ def do_send_status(db_session=None, emitter=emit):
 @socketio.event
 def send_team_menu(message):
     logging.info("got request for team menu: %s", message)
-    team = Dao.team_by_number(get_db_session(), message.get('team_number', None))
+    team = Dao.team_by_number(get_db_session(), message.get('number', None))
     logging.info("team: %s", team)
     rv = team.as_dict()
     emit('show_team_menu', rv)
@@ -180,7 +180,7 @@ def do_team_pulldown(message=None, change_dict=None, db_session=None):
     if change_dict is None:
         return
 
-    team = Dao.team_by_number(db_session, message.get('team_number', None))
+    team = Dao.team_by_number(db_session, message.get('number', None))
     logging.info('before: %s', team.as_dict())
     for n, v in change_dict.items():
         setattr(team, n, v)
@@ -210,6 +210,15 @@ def team_pulldown_inspect(message):
 @socketio.on('team-pulldown-uninspect')
 def team_pulldown_uninspect(message):
     do_team_pulldown(message, {'inspected': False}, db_session=get_db_session())
+
+
+@socketio.event
+def send_inspector_menu(message):
+    logging.info("got request for inspector menu: %s", message)
+    inspector = Dao.inspector_by_id(get_db_session(), message.get('id', None))
+    logging.info("inspector: %s", inspector)
+    rv = inspector.as_dict()
+    emit('show_inspector_menu', rv)
 
 
 @socketio.on('*')

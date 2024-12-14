@@ -8,6 +8,12 @@ engine = create_engine('sqlite:///LRI.db', echo=False)
 
 
 def team_by_number(session: Session = None, team_number: int = None) -> Team:
-    stmt = select(Team).where(Team.team_number == team_number)
+    stmt = select(Team).where(Team.number == team_number)
+    result = session.scalars(stmt).one()
+    return result
+
+
+def inspector_by_id(session: Session = None, inspector_id: int = None) -> Inspector:
+    stmt = select(Inspector).where(Inspector.id == inspector_id)
     result = session.scalars(stmt).one()
     return result

@@ -42,8 +42,8 @@ class Team(Base):
     STATUS_PASSED = "Passed Inspection"
     STATUS_NONE = ""
 
-    team_number: Mapped[int] = mapped_column(Integer, primary_key=True)
-    team_name: Mapped[str] = mapped_column(Text)
+    number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
     school_name: Mapped[str] = mapped_column(Text)
     city: Mapped[str] = mapped_column(Text)
 

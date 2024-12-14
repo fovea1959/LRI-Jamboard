@@ -47,11 +47,11 @@
             {% if team is none %}
               <td class="x-lri-blank"></td>
             {% else %}
-              <td class="x-lri-t- cm" id="t-{{team.team_number}}" onClick="showTeamMenu({{ team.team_number }})">
-                <div class="h1">{{ team.team_number }}</div>
-                <div class="h6">{{ team.team_name }}</div>
+              <td class="x-lri-t- cm" id="t-{{team.number}}" onClick="showTeamMenu({{ team.number }})">
+                <div class="h1">{{ team.number }}</div>
+                <div class="h6">{{ team.name }}</div>
                 <div class="h6">{{ team.city }}</div>
-                <div id="t-{{team.team_number}}-status"></div>
+                <div id="t-{{team.number}}-status"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -63,7 +63,7 @@
         <div id="overall-status" class="h1">&nbsp;</div>
         <div id="inspectors">
         {% for i in inspectors %}
-          <div class="x-lri-i-available">
+          <div class="x-lri-inspector x-lri-i-available" data-inspector-id="{{ i.id }}">
               {{ i.name }}: <span id="i-{{ i.id }}-status"></span>
           </div>
         {% endfor %}
@@ -98,7 +98,37 @@
     </div>
   </div>
 </div>
-<!-- context menu: https://stackoverflow.com/a/31305343 -->
+
+<!-- the modal for changing inspector status -->
+<div class="modal fade" id="inspector-pulldown">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title">
+          Change status for
+          <span class="x-lri-pulldown-inspector-name"></span>
+          <span id="inspector-pulldown-inspector-id" class="x-lri-pulldown-inspector-id d-none"></span>
+        </h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <!--
+      <div class="modal-body">
+        <div class="h5 x-lri-pulldown-team-name">
+        </div>
+      </div>
+      -->
+      <div class="modal-footer justify-content-between">
+        <span>
+          <button id="inspector-pulldown-available" class="btn btn-primary x-lri-inspector-pulldown-item">Available</button>
+          <button id="inspector-pulldown-break" class="btn btn-primary x-lri-inspector-pulldown-item">On Break</button>
+          <button id="inspector-pulldown-field" class="btn btn-primary x-lri-inspector-pulldown-item">On Field</button>
+          <button id="inspector-pulldown-gone" class="btn btn-primary x-lri-inspector-pulldown-item">(Gone)</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
 var socket;
@@ -114,9 +144,9 @@ function removeClassStartingWith(node, begin) {
   });
 }
 
-function showTeamMenu(team_number) {
-  console.log("show_team_menu", team_number)
-  if (socket) socket.emit('send_team_menu', {'team_number': team_number});
+function showTeamMenu(number) {
+  console.log("show_team_menu", number)
+  if (socket) socket.emit('send_team_menu', {'number': number});
 }
 
 $(document).ready(function() {
@@ -136,14 +166,14 @@ $(document).ready(function() {
   // server updated a team
   socket.on('team', function(msg, cb) {
     // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
-    var team_number = msg.team_number.toString();
+    var number = msg.number.toString();
 
     var s = msg.status;
     if (s == '') s = '\u00a0';
-    $('#t-' + team_number + '-status').text(s);
+    $('#t-' + number + '-status').text(s);
 
-    removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
-    $('#t-' + team_number).addClass('x-lri-t-' + makeClassName(msg.status));
+    removeClassStartingWith($('#t-' + number), 'x-lri-t-');
+    $('#t-' + number).addClass('x-lri-t-' + makeClassName(msg.status));
     if (cb) cb();
   });
 
@@ -187,11 +217,11 @@ $(document).ready(function() {
         $('#team-pulldown-weigh').show();
         $('#team-pulldown-unweigh').hide();
         $('#team-pulldown-inspect').hide();
-    }
+      }
     }
 
-    $('.x-lri-pulldown-team-number').text(team.team_number.toString())
-    $('.x-lri-pulldown-team-name').text(team.team_name)
+    $('.x-lri-pulldown-team-number').text(team.number.toString())
+    $('.x-lri-pulldown-team-name').text(team.name)
     let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
     modal.show();
 
@@ -203,9 +233,41 @@ $(document).ready(function() {
     console.log('clicked', e);
     console.log('button id is', e.target.id);
     $('#team-pulldown').modal('hide');
-    var team_number = Number($('#team-pulldown-team-number').text())
-    socket.emit(e.target.id, {'team_number': team_number})
+    var number = Number($('#team-pulldown-team-number').text())
+    socket.emit(e.target.id, {'number': number})
   });
+
+  // user clicked on an inspector
+  $('.x-lri-inspector').on('click', function(e) {
+    console.log('clicked', e);
+    inspector_id = Number(e.currentTarget.dataset.inspectorId);
+    console.log('inspector is ', inspector_id);
+    socket.emit('send_inspector_menu', {'id': inspector_id});
+  });
+
+  // server sent us inspector data
+  socket.on('show_inspector_menu', function(msg, cb) {
+    console.log ('got inspector', msg);
+
+    var inspector = msg;
+
+    $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
+    $('.x-lri-pulldown-inspector-name').text(inspector.name)
+    let modal = new bootstrap.Modal(document.getElementById('inspector-pulldown'));
+    modal.show();
+
+    if (cb) cb();
+  });
+
+  // user clicked on a button in the inspector modal
+  $('.x-lri-inspector-pulldown-item').on('click', function(e) {
+    console.log('clicked', e);
+    console.log('button id is', e.target.id);
+    $('#inspector-pulldown').modal('hide');
+    var id = Number($('#inspector-pulldown-inspector-id').text())
+    socket.emit(e.target.id, {'id': id})
+  });
+
 
 });
 
