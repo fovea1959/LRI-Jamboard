@@ -74,18 +74,21 @@
 </div>
 
 <!-- https://www.geeksforgeeks.org/how-to-create-modal-using-bootstrap-5/ -->
-<div class="modal fade" id="GFG">
+<div class="modal fade" id="team-pulldown">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          Modal for <span id="GFG-team-number"></span>
+          Modal for <span class="x-lri-pulldown-team-number"></span>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p>I am a Modal</p>
-        <p>Bootstrap Modal Via Data Attributes</p>
+        <p>I am a Modal for <span class="x-lri-pulldown-team-number"></span></p>
+        <button class="btn btn-primary">Mark Inspected</button>
+      </div>
+      <div class="modal-footer">
+        footer
       </div>
     </div>
   </div>
@@ -106,8 +109,8 @@ function removeClassStartingWith(node, begin) {
 }
 
 function showTeamMenu(team_number) {
-  $('#GFG-team-number').text(team_number.toString())
-  let modal = new bootstrap.Modal(document.getElementById('GFG'));
+  $('.x-lri-pulldown-team-number').text(team_number.toString())
+  let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
   modal.show();
 }
 
