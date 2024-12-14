@@ -30,6 +30,10 @@ class Base(DeclarativeBase):
             return f"<{self.__class__.__name__}({','.join(field_strings)})>"
         return f"<{self.__class__.__name__} {id(self)}>"
 
+    def __repr__(self):
+        # override this one if necessary
+        return self._repr(**self.as_dict())
+
 
 class Team(Base):
     __tablename__ = 'teams'

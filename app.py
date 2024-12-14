@@ -9,11 +9,11 @@ import flask
 from flask import Flask, render_template, url_for, redirect, request, flash, session, copy_current_request_context
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from flask_socketio import SocketIO, emit, join_room, leave_room, \
-    close_room, rooms, disconnect
+from flask_socketio import SocketIO, emit, disconnect
 
 import LRIDao as Dao
 import LRIEntities as E
+from LRIEntities import Team
 
 
 class MyEncoder(json.JSONEncoder):
@@ -64,7 +64,7 @@ def get_db_session():
     # https://flask.palletsprojects.com/en/stable/appcontext/#storing-data
     if 'db_session' not in flask.g:
         flask.g.db_session = Session()
-        logging.info("made session %s", flask.g.db_session)
+        logging.info("session %s created", flask.g.db_session)
     return flask.g.db_session
 
 
@@ -112,7 +112,7 @@ def index():
 
 @socketio.on('*')
 def catch_all(event, data):
-    logging.info ("catch_all got %s: %s", event, data)
+    logging.info("catch_all got %s: %s", event, data)
 
 
 def background_thread():
@@ -152,71 +152,69 @@ def do_send_inspectors(db_session=None, emitter=emit):
 
 @socketio.event
 def send_status(message):
+    do_send_status(db_session=get_db_session())
+
+
+def do_send_status(db_session=None, emitter=emit):
     complete = 0
     total = 0
-    for item in get_db_session().query(E.Team).all():
+    for item in db_session.query(E.Team).all():
         total += 1
         if item.status == item.STATUS_PASSED:
             complete += 1
     rv = G(total=total, complete=complete)
-    emit('status', rv)
+    emitter('status', rv)
 
 
 @socketio.event
-def test_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': message['data'], 'count': session['receive_count']})
+def send_team_menu(message):
+    logging.info("got request for team menu: %s", message)
+    team = Dao.team_by_number(get_db_session(), message.get('team_number', None))
+    logging.info("team: %s", team)
+    rv = team.as_dict()
+    emit('show_team_menu', rv)
 
 
-@socketio.event
-def test_broadcast_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': message['data'], 'count': session['receive_count']},
-         broadcast=True)
+def do_team_pulldown(message=None, change_dict=None, db_session=None):
+    logging.info('doing team pulldown: %s %s', message, change_dict)
+    if change_dict is None:
+        return
+
+    team = Dao.team_by_number(db_session, message.get('team_number', None))
+    logging.info('before: %s', team.as_dict())
+    for n, v in change_dict.items():
+        setattr(team, n, v)
+    logging.info('after:  %s', team.as_dict())
+    db_session.add(team)
+    db_session.commit()
+
+    socketio.emit('team', team.as_dict())
+    do_send_status(db_session=db_session, emitter=socketio.emit)
 
 
-@socketio.event
-def join(message):
-    join_room(message['room'])
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
+@socketio.on('team-pulldown-weigh')
+def team_pulldown_weigh(message):
+    do_team_pulldown(message, {'weighed': True}, db_session=get_db_session())
 
 
-@socketio.event
-def leave(message):
-    leave_room(message['room'])
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
+@socketio.on('team-pulldown-unweigh')
+def team_pulldown_unweigh(message):
+    do_team_pulldown(message, {'weighed': False}, db_session=get_db_session())
 
 
-@socketio.on('close_room')
-def on_close_room(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response', {'data': 'Room ' + message['room'] + ' is closing.',
-                         'count': session['receive_count']},
-         to=message['room'])
-    close_room(message['room'])
+@socketio.on('team-pulldown-inspect')
+def team_pulldown_inspect(message):
+    do_team_pulldown(message, {'inspected': True}, db_session=get_db_session())
 
 
-@socketio.event
-def test_room_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': message['data'], 'count': session['receive_count']},
-         to=message['room'])
+@socketio.on('team-pulldown-uninspect')
+def team_pulldown_uninspect(message):
+    do_team_pulldown(message, {'inspected': False}, db_session=get_db_session())
 
 
 @socketio.on('*')
 def catch_all(event, data):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('test_response',
-         {'data': [event, data], 'count': session['receive_count']})
+    logging.info ("catch_all: %s %s", event, data)
 
 
 @socketio.event
@@ -229,14 +227,9 @@ def disconnect_request():
     # for this emit we use a callback function
     # when the callback function is invoked we know that the message has been
     # received and it is safe to disconnect
-    emit('test_response',
-         {'data': 'Disconnected!', 'count': session['receive_count']},
+    emit('disconnect_response',
+         {'data': 'Disconnected!'},
          callback=can_disconnect)
-
-
-@socketio.event
-def test_ping():
-    emit('test_pong')
 
 
 @socketio.event
@@ -245,7 +238,6 @@ def connect():
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(background_thread)
-    emit('test_response', {'data': 'Connected', 'count': 0})
 
 
 @socketio.on('disconnect')
@@ -291,6 +283,8 @@ if __name__ == '__main__':
     root.setLevel(logging.INFO)
     # need to look at https://stackoverflow.com/a/73094988 to handle access logs
 
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.pool").setLevel(logging.INFO)
+    logging.getLogger('socketio.server').setLevel(logging.ERROR)
+    logging.getLogger('engineio.server').setLevel(logging.ERROR)
     main()

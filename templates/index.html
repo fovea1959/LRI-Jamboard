@@ -20,11 +20,11 @@
 }
 
 #team-table .x-lri-t- {
-  background-color: #808080;
+  background-color: #c0c0c0;
 }
 
 #team-table .x-lri-blank {
-  background-color: #808080;
+  background-color: #c0c0c0;
 }
 
 #page-table .x-lri-blank {
@@ -73,22 +73,27 @@
   </table>
 </div>
 
-<!-- https://www.geeksforgeeks.org/how-to-create-modal-using-bootstrap-5/ -->
+<!-- the modal for changing team status -->
 <div class="modal fade" id="team-pulldown">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">
-          Modal for <span class="x-lri-pulldown-team-number"></span>
-        </h5>
+        <h1 class="modal-title">
+          Change status for <span id="team-pulldown-team-number" class="x-lri-pulldown-team-number"></span>
+        </h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p>I am a Modal for <span class="x-lri-pulldown-team-number"></span></p>
-        <button class="btn btn-primary">Mark Inspected</button>
+        <div class="h5 x-lri-pulldown-team-name">
+        </div>
       </div>
-      <div class="modal-footer">
-        footer
+      <div class="modal-footer justify-content-between">
+        <span>
+          <button id="team-pulldown-weigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Weighed</button>
+          <button id="team-pulldown-unweigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Weighed</button>
+          <button id="team-pulldown-inspect" class="btn btn-primary x-lri-team-pulldown-item">Mark Inspected</button>
+          <button id="team-pulldown-uninspect" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Inspected</button>
+        </span>
       </div>
     </div>
   </div>
@@ -96,6 +101,7 @@
 <!-- context menu: https://stackoverflow.com/a/31305343 -->
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
+var socket;
 
 function makeClassName(text) {
   return text.replaceAll(new RegExp("\\s+", "g"), "-").toLowerCase();
@@ -109,57 +115,98 @@ function removeClassStartingWith(node, begin) {
 }
 
 function showTeamMenu(team_number) {
-  $('.x-lri-pulldown-team-number').text(team_number.toString())
-  let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
-  modal.show();
+  console.log("show_team_menu", team_number)
+  if (socket) socket.emit('send_team_menu', {'team_number': team_number});
 }
 
 $(document).ready(function() {
   // Connect to the Socket.IO server.
   // The connection URL has the following format, relative to the current page:
   //     http[s]://<domain>:<port>[/<namespace>]
-  var socket = io();
+  socket = io();
 
   // Event handler for new connections.
-  // The callback function is invoked when a connection with the
-  // server is established.
   socket.on('connect', function() {
-      socket.emit('lri_event', {data: 'LRI page connected!'});
-      socket.emit('send_teams', {});
-      socket.emit('send_inspectors', {});
-      socket.emit('send_status', {});
+    socket.emit('lri_event', {data: 'LRI page connected!'});
+    socket.emit('send_teams', {});
+    socket.emit('send_inspectors', {});
+    socket.emit('send_status', {});
   });
 
+  // server updated a team
   socket.on('team', function(msg, cb) {
-      // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
-      var team_number = msg.team_number.toString();
+    // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
+    var team_number = msg.team_number.toString();
 
-      $('#t-' + team_number + '-status').text(msg.status);
+    var s = msg.status;
+    if (s == '') s = '\u00a0';
+    $('#t-' + team_number + '-status').text(s);
 
-      removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
-      $('#t-' + team_number).addClass('x-lri-t-' + makeClassName(msg.status));
-      if (cb)
-          cb();
+    removeClassStartingWith($('#t-' + team_number), 'x-lri-t-');
+    $('#t-' + team_number).addClass('x-lri-t-' + makeClassName(msg.status));
+    if (cb) cb();
   });
 
+  // server updated an inspector
   socket.on('inspector', function(msg, cb) {
-      var inspector_id = msg.id.toString();
+    var inspector_id = msg.id.toString();
 
-      $('#i-' + inspector_id + '-status').text(msg.status_text);
+    $('#i-' + inspector_id + '-status').text(msg.status_text);
 
-      if (cb)
-          cb();
+    if (cb) cb();
   });
 
+  // server sent us a status summary
   socket.on('status', function(msg, cb) {
-      var total = msg.total;
-      var complete = msg.complete;
+    var total = msg.total;
+    var complete = msg.complete;
 
-      $('#overall-status').text(complete + " of " + total + " passed.");
+    $('#overall-status').text(complete + " of " + total + " passed.");
 
-      if (cb)
-          cb();
+    if (cb) cb();
   });
+
+  // we got a response form telling the server that someone wanted the context menu for a team
+  socket.on('show_team_menu', function(msg, cb) {
+    console.log ('got team', msg);
+
+    var team = msg;
+
+    if (team.inspected) {
+      $('#team-pulldown-weigh').hide();
+      $('#team-pulldown-unweigh').hide();
+      $('#team-pulldown-inspect').hide();
+      $('#team-pulldown-uninspect').show();
+    } else {
+      $('#team-pulldown-uninspect').hide();
+      if (team.weighed) {
+        $('#team-pulldown-weigh').hide();
+        $('#team-pulldown-unweigh').show();
+        $('#team-pulldown-inspect').show();
+      } else {
+        $('#team-pulldown-weigh').show();
+        $('#team-pulldown-unweigh').hide();
+        $('#team-pulldown-inspect').hide();
+    }
+    }
+
+    $('.x-lri-pulldown-team-number').text(team.team_number.toString())
+    $('.x-lri-pulldown-team-name').text(team.team_name)
+    let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
+    modal.show();
+
+    if (cb) cb();
+  });
+
+  // user clicked on a button in the team modal
+  $('.x-lri-team-pulldown-item').on('click', function(e) {
+    console.log('clicked', e);
+    console.log('button id is', e.target.id);
+    $('#team-pulldown').modal('hide');
+    var team_number = Number($('#team-pulldown-team-number').text())
+    socket.emit(e.target.id, {'team_number': team_number})
+  });
+
 });
 
 </script>
