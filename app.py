@@ -152,6 +152,16 @@ def do_team_pulldown(message=None, change_dict=None, db_session=None):
     do_send_status(db_session=db_session, emitter=socketio.emit)
 
 
+@socketio.on('team-pulldown-see')
+def team_pulldown_seen(message):
+    do_team_pulldown(message, {'seen': True}, db_session=get_db_session())
+
+
+@socketio.on('team-pulldown-unsee')
+def team_pulldown_unseen(message):
+    do_team_pulldown(message, {'seen': False}, db_session=get_db_session())
+
+
 @socketio.on('team-pulldown-weigh')
 def team_pulldown_weigh(message):
     do_team_pulldown(message, {'weighed': True}, db_session=get_db_session())
@@ -162,14 +172,14 @@ def team_pulldown_unweigh(message):
     do_team_pulldown(message, {'weighed': False}, db_session=get_db_session())
 
 
-@socketio.on('team-pulldown-inspect')
-def team_pulldown_inspect(message):
-    do_team_pulldown(message, {'inspected': True}, db_session=get_db_session())
+@socketio.on('team-pulldown-pass')
+def team_pulldown_pass(message):
+    do_team_pulldown(message, {'passed_inspection': True}, db_session=get_db_session())
 
 
-@socketio.on('team-pulldown-uninspect')
-def team_pulldown_uninspect(message):
-    do_team_pulldown(message, {'inspected': False}, db_session=get_db_session())
+@socketio.on('team-pulldown-unpass')
+def team_pulldown_unpass(message):
+    do_team_pulldown(message, {'passed_inspection': False}, db_session=get_db_session())
 
 
 @socketio.event
@@ -238,11 +248,22 @@ def inspector_pulldown_gone(message):
 
 @socketio.on('inspector-pulldown-team')
 def inspector_pulldown_gone(message):
+    db_session = get_db_session()
     do_inspector_pulldown(message,{
         'status': E.Inspector.STATUS_WITH_TEAM,
         'with_team': message['team'],
         'when': datetime.datetime.now()
-    }, db_session=get_db_session())
+    }, db_session=db_session)
+
+    team = Dao.team_by_number(db_session, message.get('team', None))
+    logging.info('before: %s', team.as_dict())
+    team.seen = True
+    logging.info('after:  %s', team.as_dict())
+    db_session.add(team)
+    db_session.commit()
+
+    logging.info('aafter: %s', team.as_dict())
+    socketio.emit('team', team.as_dict())
 
 
 @socketio.event

@@ -11,7 +11,7 @@
 
 // see https://stackoverflow.com/a/27704409 for why we include the table id
 
-#team-table .x-lri-t-weighed {
+#team-table .x-lri-t-present {
   background-color: #ffffff;
 }
 
@@ -96,10 +96,12 @@
       </div>
       <div class="modal-footer justify-content-between">
         <span>
+          <button id="team-pulldown-see" class="btn btn-primary x-lri-team-pulldown-item">Mark Seen</button>
+          <button id="team-pulldown-unsee" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Seen</button>
           <button id="team-pulldown-weigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Weighed</button>
           <button id="team-pulldown-unweigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Weighed</button>
-          <button id="team-pulldown-inspect" class="btn btn-primary x-lri-team-pulldown-item">Mark Inspected</button>
-          <button id="team-pulldown-uninspect" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Inspected</button>
+          <button id="team-pulldown-pass" class="btn btn-primary x-lri-team-pulldown-item">Mark Passed</button>
+          <button id="team-pulldown-unpass" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Passed</button>
         </span>
       </div>
     </div>
@@ -202,7 +204,14 @@ $(document).ready(function() {
     $('#t-' + number + '-status').text(s);
 
     removeClassStartingWith($('#t-' + number + '-box'), 'x-lri-t-');
-    $('#t-' + number + '-box').addClass('x-lri-t-' + makeClassName(msg.status));
+    cn = '';
+    if (msg.passed_inspection) {
+      cn = 'passed-inspection';
+    } else if (msg.present) {
+      cn = 'present';
+    }
+    $('#t-' + number + '-box').addClass('x-lri-t-' + cn);
+
     if (cb) cb();
   });
 
@@ -213,22 +222,40 @@ $(document).ready(function() {
     team = JSON.parse($('#t-' + team_number).attr('data-o'));
     console.log("team:", team);
 
-    if (team.inspected) {
+    var show_see = false;
+    var show_unsee = false;
+    if (team.passed_inspection) {
       $('#team-pulldown-weigh').hide();
       $('#team-pulldown-unweigh').hide();
-      $('#team-pulldown-inspect').hide();
-      $('#team-pulldown-uninspect').show();
+      $('#team-pulldown-pass').hide();
+      $('#team-pulldown-unpass').show();
     } else {
-      $('#team-pulldown-uninspect').hide();
+      $('#team-pulldown-unpass').hide();
       if (team.weighed) {
         $('#team-pulldown-weigh').hide();
         $('#team-pulldown-unweigh').show();
-        $('#team-pulldown-inspect').show();
+        $('#team-pulldown-pass').show();
       } else {
         $('#team-pulldown-weigh').show();
         $('#team-pulldown-unweigh').hide();
-        $('#team-pulldown-inspect').hide();
+        $('#team-pulldown-pass').hide();
+        // not weighed or passed, so give options to see or unsee
+        if (team.present) {
+          show_unsee = true;
+        } else {
+          show_see = true;
+        }
       }
+    }
+    if (show_see) {
+      $('#team-pulldown-see').show();
+    } else {
+      $('#team-pulldown-see').hide();
+    }
+    if (show_unsee) {
+      $('#team-pulldown-unsee').show();
+    } else {
+      $('#team-pulldown-unsee').hide();
     }
 
     $('.x-lri-pulldown-team-number').text(team.number.toString())

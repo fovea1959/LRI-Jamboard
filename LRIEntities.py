@@ -47,22 +47,28 @@ class Team(Base):
     school_name: Mapped[str] = mapped_column(Text)
     city: Mapped[str] = mapped_column(Text)
 
+    seen: Mapped[bool] = mapped_column(Boolean)
     weighed: Mapped[bool] = mapped_column(Boolean)
-    inspected: Mapped[bool] = mapped_column(Boolean)
+    passed_inspection: Mapped[bool] = mapped_column(Boolean)
 
     @property
     def status(self):
         rv = self.STATUS_NONE
         if self.weighed:
-            if self.inspected:
+            if self.passed_inspection:
                 rv = self.STATUS_PASSED
             else:
                 rv = self.STATUS_WEIGHED
         return rv
 
+    @property
+    def present(self):
+        return self.seen or self.weighed or self.passed_inspection
+
     def as_dict(self):
         rv = super().as_dict()
         rv['status'] = self.status
+        rv['present'] = self.present
         return rv
 
 
