@@ -5,8 +5,8 @@ import sys
 
 from sqlalchemy.orm import Session
 
-import LRIEntities as E
 import LRIDao as Dao
+from LRIEntities import *
 
 
 def main(argv):
@@ -14,7 +14,7 @@ def main(argv):
         os.remove('LRI.db')
     except FileNotFoundError:
         pass
-    E.Base.metadata.create_all(Dao.engine)
+    Base.metadata.create_all(Dao.engine)
 
     with open('2022misjo_teams.json', 'r') as f:
         blue_alliance = json.load(f)
@@ -23,7 +23,7 @@ def main(argv):
     with (Session(Dao.engine) as session):
         for team_dict in blue_alliance:  # type: dict
             team_number = team_dict['team_number']
-            team = E.Team(
+            team = Team(
                 number=team_number,
                 name=team_dict['nickname'],
                 school_name=team_dict['school_name'],
@@ -35,14 +35,14 @@ def main(argv):
         session.commit()
 
         n = [
-            ('Tearesa W', 'available', None),
-            ('Doug W', 'on break', '20241213 11:00'),
-            ('Kevin S', 'available', None),
-            ('Greg F', 'available', None),
+            ('Tearesa W', Inspector.STATUS_AVAILABLE, None),
+            ('Doug W', Inspector.STATUS_AVAILABLE, None),
+            ('Kevin S', Inspector.STATUS_GONE, None),
+            ('Greg F', Inspector.STATUS_GONE, None),
         ]
         for n1, s, when_str in n:
             when = None if when_str is None else datetime.datetime.fromisoformat(when_str)
-            inspector = E.Inspector(
+            inspector = Inspector(
                 name=n1,
                 status=s,
                 when=when,

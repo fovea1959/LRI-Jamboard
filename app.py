@@ -87,27 +87,29 @@ def no_result_found_handler(error):
 
 @app.route('/')
 def index():
-    data = []
+    teams = []
+    team_data = []
     for item in get_db_session().query(E.Team).all():
         g = G(team=item)
-        data.append(g)
+        teams.append(g)
+        team_data.append(g)
     n_rows, n_cols = (5, 8)
-    if len(data) < 36:
+    if len(teams) < 36:
         n_rows, n_cols = (5, 7)
-    elif len(data) >= 42:
+    elif len(teams) >= 42:
         n_rows, n_cols = (6, 8)
-    elif len(data) > 40:
+    elif len(teams) > 40:
         n_rows, n_cols = (6, 7)
     # make last row complete
-    for i in range(len(data), n_rows * n_cols):
-        data.append(G(team=None))
+    for i in range(len(teams), n_rows * n_cols):
+        teams.append(G(team=None))
 
     """https://stackoverflow.com/a/14681687"""
-    data = [data[i:i + n_cols] for i in range(0, len(data), n_cols)]
+    row_data = [teams[i:i + n_cols] for i in range(0, len(teams), n_cols)]
 
     inspectors = [i for i in get_db_session().query(E.Inspector).all()]
 
-    return render_template("index.html", team_rows=data, inspectors=inspectors)
+    return render_template("index.html", team_data=team_data, row_data=row_data, inspectors=inspectors)
 
 
 @socketio.on('*')
@@ -131,34 +133,6 @@ def send_teams(message):
     for item in get_db_session().query(E.Team).all():
         d = item.as_dict()
         emit('team', d)
-
-
-@socketio.event
-def send_inspectors(message):
-    logging.info("got send_inspectors")
-    do_send_inspectors(db_session=get_db_session())
-
-
-def do_send_inspectors(db_session=None, emitter=emit):
-    for item in db_session.query(E.Inspector).all():
-        d = item.as_dict()
-        emitter('inspector', d)
-
-
-@socketio.event
-def send_status(message):
-    do_send_status(db_session=get_db_session())
-
-
-def do_send_status(db_session=None, emitter=emit):
-    complete = 0
-    total = 0
-    for item in db_session.query(E.Team).all():
-        total += 1
-        if item.status == item.STATUS_PASSED:
-            complete += 1
-    rv = G(total=total, complete=complete)
-    emitter('status', rv)
 
 
 def do_team_pulldown(message=None, change_dict=None, db_session=None):
@@ -198,6 +172,95 @@ def team_pulldown_uninspect(message):
     do_team_pulldown(message, {'inspected': False}, db_session=get_db_session())
 
 
+@socketio.event
+def send_inspectors(message):
+    logging.info("got send_inspectors")
+    do_send_inspectors(db_session=get_db_session())
+
+
+def do_send_inspectors(db_session=None, emitter=emit):
+    for item in db_session.query(E.Inspector).all():
+        d = item.as_dict()
+        emitter('inspector', d)
+
+
+def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
+    logging.info('doing inspector pulldown: %s %s', message, change_dict)
+    if change_dict is None:
+        return
+
+    inspector = Dao.inspector_by_id(db_session, message.get('id', None))
+    logging.info('before: %s', inspector.as_dict())
+    for n, v in change_dict.items():
+        setattr(inspector, n, v)
+    logging.info('after:  %s', inspector.as_dict())
+    db_session.add(inspector)
+    db_session.commit()
+
+    socketio.emit('inspector', inspector.as_dict())
+
+
+@socketio.on('inspector-pulldown-available')
+def inspector_pulldown_available(message):
+    do_inspector_pulldown(message,{
+        'status': E.Inspector.STATUS_AVAILABLE,
+        'with_team': None,
+        'when': None
+    }, db_session=get_db_session())
+
+
+@socketio.on('inspector-pulldown-break')
+def inspector_pulldown_break(message):
+    do_inspector_pulldown(message,{
+        'status': E.Inspector.STATUS_ON_BREAK,
+        'with_team': None,
+        'when': datetime.datetime.now()
+    }, db_session=get_db_session())
+
+
+@socketio.on('inspector-pulldown-field')
+def inspector_pulldown_field(message):
+    do_inspector_pulldown(message,{
+        'status': E.Inspector.STATUS_ON_FIELD,
+        'with_team': None,
+        'when': datetime.datetime.now()
+    }, db_session=get_db_session())
+
+
+@socketio.on('inspector-pulldown-gone')
+def inspector_pulldown_gone(message):
+    do_inspector_pulldown(message,{
+        'status': E.Inspector.STATUS_GONE,
+        'with_team': None,
+        'when': None
+    }, db_session=get_db_session())
+
+
+@socketio.on('inspector-pulldown-team')
+def inspector_pulldown_gone(message):
+    do_inspector_pulldown(message,{
+        'status': E.Inspector.STATUS_WITH_TEAM,
+        'with_team': message['team'],
+        'when': datetime.datetime.now()
+    }, db_session=get_db_session())
+
+
+@socketio.event
+def send_status(message):
+    do_send_status(db_session=get_db_session())
+
+
+def do_send_status(db_session=None, emitter=emit):
+    complete = 0
+    total = 0
+    for item in db_session.query(E.Team).all():
+        total += 1
+        if item.status == item.STATUS_PASSED:
+            complete += 1
+    rv = G(total=total, complete=complete)
+    emitter('status', rv)
+
+
 @socketio.on('*')
 def catch_all(event, data):
     logging.info ("catch_all: %s %s", event, data)
@@ -227,7 +290,7 @@ def connect():
 
 
 @socketio.on('disconnect')
-def test_disconnect():
+def disconnect():
     print('Client disconnected', request.sid)
 
 
@@ -271,6 +334,6 @@ if __name__ == '__main__':
 
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.pool").setLevel(logging.INFO)
-    logging.getLogger('socketio.server').setLevel(logging.ERROR)
-    logging.getLogger('engineio.server').setLevel(logging.ERROR)
+    logging.getLogger('socketio.server').setLevel(logging.WARNING)
+    logging.getLogger('engineio.server').setLevel(logging.WARNING)
     main()

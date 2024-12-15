@@ -75,11 +75,17 @@ class Inspector(Base):
     with_team: Mapped[Optional[int]] = mapped_column(Integer)
     when: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
 
+    STATUS_AVAILABLE = "Available"
+    STATUS_ON_BREAK = "On break"
+    STATUS_ON_FIELD = "On field"
+    STATUS_GONE = "Gone"
+    STATUS_WITH_TEAM = "With team"
+
     @property
     def status_text(self):
         rv = self.status
         if self.with_team is not None:
-            rv = rv + f" with {self.with_team}"
+            rv = rv + f" {self.with_team}"
         if self.when is not None:
             rv = rv + f" since {self.when} ({self.how_long})"
         return rv

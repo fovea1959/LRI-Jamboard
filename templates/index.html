@@ -30,6 +30,10 @@
 #page-table .x-lri-blank {
   // background-color: #808080;
 }
+
+.dropdown-menu.drop {
+  min-width: 1000px
+}
 </style>
 {% endblock %}
 
@@ -40,7 +44,7 @@
     <tr>
       <td class="p-0 m-0 col-9">
         <table id="team-table" class="table table-bordered vh-100" style="table-layout: fixed;">
-        {% for row in team_rows %}
+        {% for row in row_data %}
           <tr>
           {% for g in row %}
             {% set team=g.team %}
@@ -114,23 +118,39 @@
         </h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <!--
-      <div class="modal-body">
-        <div class="h5 x-lri-pulldown-team-name">
-        </div>
-      </div>
-      -->
       <div class="modal-footer justify-content-between">
         <span>
           <button id="inspector-pulldown-available" class="btn btn-primary x-lri-inspector-pulldown-item">Available</button>
           <button id="inspector-pulldown-break" class="btn btn-primary x-lri-inspector-pulldown-item">On Break</button>
           <button id="inspector-pulldown-field" class="btn btn-primary x-lri-inspector-pulldown-item">On Field</button>
           <button id="inspector-pulldown-gone" class="btn btn-primary x-lri-inspector-pulldown-item">(Gone)</button>
+          <span class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              With team...
+            </button>
+            <!-- team number dropdown for inspector modal -->
+            <div class="dropdown-menu drop" aria-labelledby="dropdownMenuButton">
+              <div class="row">
+                <div class="col-4">
+                {% set list_length = (((team_data|length) + 2) / 3)|int %}
+                {% for g in team_data %}
+                  {% set team = g.team %}
+                  <a class="dropdown-item x-lri-inspector-pulldown-with-team" href="#" data-team-number="{{ team.number }}">{{ team.number }}: {{ team.name }}</a>
+                  {% if (loop.index % list_length) == 0 %}
+                </div>
+                <div class="col-4">
+                  {% endif %}
+                {% endfor %}
+                </div>
+              </div>
+            </div>
+          </span>
         </span>
       </div>
     </div>
   </div>
 </div>
+
 
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
@@ -259,7 +279,15 @@ $(document).ready(function() {
     socket.emit(e.target.id, {'id': id})
   });
 
-
+  // user clicked on a team number in the inspector modal
+  $('.x-lri-inspector-pulldown-with-team').on('click', function(e) {
+    console.log('clicked', e);
+    console.log('button id is', e.target.id);
+    console.log('button team number is', e.target.dataset.teamNumber);
+    $('#inspector-pulldown').modal('hide');
+    var id = Number($('#inspector-pulldown-inspector-id').text())
+    socket.emit('inspector-pulldown-team', {'id': id, 'team': Number(e.target.dataset.teamNumber)})
+  });
 });
 
 </script>
