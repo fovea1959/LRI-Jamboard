@@ -47,7 +47,8 @@
             {% if team is none %}
               <td class="x-lri-blank"></td>
             {% else %}
-              <td class="x-lri-t- cm" id="t-{{team.number}}" onClick="showTeamMenu({{ team.number }})">
+              <td id="t-{{team.number}}-box" class="x-lri-t- cm x-lri-team" data-team-number="{{team.number}}">
+                <span id="t-{{team.number}}" class="d-none"></span>
                 <div class="h1">{{ team.number }}</div>
                 <div class="h6">{{ team.name }}</div>
                 <div class="h6">{{ team.city }}</div>
@@ -63,8 +64,10 @@
         <div id="overall-status" class="h1">&nbsp;</div>
         <div id="inspectors">
         {% for i in inspectors %}
-          <div class="x-lri-inspector x-lri-i-available" data-inspector-id="{{ i.id }}">
-              {{ i.name }}: <span id="i-{{ i.id }}-status"></span>
+          <div id="i-{{ i.id }}-box" class="x-lri-inspector x-lri-i-available" data-inspector-id="{{ i.id }}">
+            <span id="i-{{ i.id }}" class="d-none"></span>
+            <span>{{ i.name }}:</span>
+            <span id="i-{{ i.id }}-status"></span>
           </div>
         {% endfor %}
         </div>
@@ -131,7 +134,6 @@
 
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
-var socket;
 
 function makeClassName(text) {
   return text.replaceAll(new RegExp("\\s+", "g"), "-").toLowerCase();
@@ -144,16 +146,11 @@ function removeClassStartingWith(node, begin) {
   });
 }
 
-function showTeamMenu(number) {
-  console.log("show_team_menu", number)
-  if (socket) socket.emit('send_team_menu', {'number': number});
-}
-
 $(document).ready(function() {
   // Connect to the Socket.IO server.
   // The connection URL has the following format, relative to the current page:
   //     http[s]://<domain>:<port>[/<namespace>]
-  socket = io();
+  var socket = io();
 
   // Event handler for new connections.
   socket.on('connect', function() {
@@ -161,29 +158,6 @@ $(document).ready(function() {
     socket.emit('send_teams', {});
     socket.emit('send_inspectors', {});
     socket.emit('send_status', {});
-  });
-
-  // server updated a team
-  socket.on('team', function(msg, cb) {
-    // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
-    var number = msg.number.toString();
-
-    var s = msg.status;
-    if (s == '') s = '\u00a0';
-    $('#t-' + number + '-status').text(s);
-
-    removeClassStartingWith($('#t-' + number), 'x-lri-t-');
-    $('#t-' + number).addClass('x-lri-t-' + makeClassName(msg.status));
-    if (cb) cb();
-  });
-
-  // server updated an inspector
-  socket.on('inspector', function(msg, cb) {
-    var inspector_id = msg.id.toString();
-
-    $('#i-' + inspector_id + '-status').text(msg.status_text);
-
-    if (cb) cb();
   });
 
   // server sent us a status summary
@@ -196,11 +170,28 @@ $(document).ready(function() {
     if (cb) cb();
   });
 
-  // we got a response form telling the server that someone wanted the context menu for a team
-  socket.on('show_team_menu', function(msg, cb) {
-    console.log ('got team', msg);
+  // server updated a team
+  socket.on('team', function(msg, cb) {
+    // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
+    var number = msg.number.toString();
+    $('#t-' + number).text(JSON.stringify(msg));
+    $('#t-' + number).attr('data-o', JSON.stringify(msg));
 
-    var team = msg;
+    var s = msg.status;
+    if (s == '') s = '\u00a0';
+    $('#t-' + number + '-status').text(s);
+
+    removeClassStartingWith($('#t-' + number + '-box'), 'x-lri-t-');
+    $('#t-' + number + '-box').addClass('x-lri-t-' + makeClassName(msg.status));
+    if (cb) cb();
+  });
+
+  // user clicked on an team
+  $('.x-lri-team').on('click', function(e) {
+    console.log('clicked', e);
+    team_number = e.currentTarget.dataset.teamNumber;
+    team = JSON.parse($('#t-' + team_number).attr('data-o'));
+    console.log("team:", team);
 
     if (team.inspected) {
       $('#team-pulldown-weigh').hide();
@@ -224,8 +215,6 @@ $(document).ready(function() {
     $('.x-lri-pulldown-team-name').text(team.name)
     let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
     modal.show();
-
-    if (cb) cb();
   });
 
   // user clicked on a button in the team modal
@@ -237,26 +226,28 @@ $(document).ready(function() {
     socket.emit(e.target.id, {'number': number})
   });
 
+  // server sent us information on an inspector
+  socket.on('inspector', function(msg, cb) {
+    var inspector_id = msg.id.toString();
+    $('#i-' + inspector_id).text(JSON.stringify(msg));
+    $('#i-' + inspector_id).attr('data-o', JSON.stringify(msg));
+
+    $('#i-' + inspector_id + '-status').text(msg.status_text);
+
+    if (cb) cb();
+  });
+
   // user clicked on an inspector
   $('.x-lri-inspector').on('click', function(e) {
     console.log('clicked', e);
-    inspector_id = Number(e.currentTarget.dataset.inspectorId);
-    console.log('inspector is ', inspector_id);
-    socket.emit('send_inspector_menu', {'id': inspector_id});
-  });
-
-  // server sent us inspector data
-  socket.on('show_inspector_menu', function(msg, cb) {
-    console.log ('got inspector', msg);
-
-    var inspector = msg;
+    inspector_id = e.currentTarget.dataset.inspectorId;
+    inspector = JSON.parse($('#i-' + inspector_id).attr('data-o'));
+    console.log("inspector:", inspector);
 
     $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
     $('.x-lri-pulldown-inspector-name').text(inspector.name)
     let modal = new bootstrap.Modal(document.getElementById('inspector-pulldown'));
     modal.show();
-
-    if (cb) cb();
   });
 
   // user clicked on a button in the inspector modal

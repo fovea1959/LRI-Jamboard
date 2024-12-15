@@ -125,11 +125,6 @@ def background_thread():
         socketio.sleep(60)
 
 
-@app.route('/test')
-def test():
-    return render_template('test.html', async_mode=socketio.async_mode)
-
-
 @socketio.event
 def send_teams(message):
     logging.info("got send_teams")
@@ -164,15 +159,6 @@ def do_send_status(db_session=None, emitter=emit):
             complete += 1
     rv = G(total=total, complete=complete)
     emitter('status', rv)
-
-
-@socketio.event
-def send_team_menu(message):
-    logging.info("got request for team menu: %s", message)
-    team = Dao.team_by_number(get_db_session(), message.get('number', None))
-    logging.info("team: %s", team)
-    rv = team.as_dict()
-    emit('show_team_menu', rv)
 
 
 def do_team_pulldown(message=None, change_dict=None, db_session=None):
@@ -210,15 +196,6 @@ def team_pulldown_inspect(message):
 @socketio.on('team-pulldown-uninspect')
 def team_pulldown_uninspect(message):
     do_team_pulldown(message, {'inspected': False}, db_session=get_db_session())
-
-
-@socketio.event
-def send_inspector_menu(message):
-    logging.info("got request for inspector menu: %s", message)
-    inspector = Dao.inspector_by_id(get_db_session(), message.get('id', None))
-    logging.info("inspector: %s", inspector)
-    rv = inspector.as_dict()
-    emit('show_inspector_menu', rv)
 
 
 @socketio.on('*')
