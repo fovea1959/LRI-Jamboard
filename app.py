@@ -278,7 +278,7 @@ def do_send_status(db_session=None, emitter=emit):
         total += 1
         if item.status == item.STATUS_PASSED:
             complete += 1
-    rv = G(total=total, complete=complete)
+    rv = G(total=total, complete=complete, time=datetime.datetime.now().strftime('%l:%M %p'))
     emitter('status', rv)
 
 

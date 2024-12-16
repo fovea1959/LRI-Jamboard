@@ -93,7 +93,15 @@ class Inspector(Base):
         if self.with_team is not None:
             rv = rv + f" {self.with_team}"
         if self.when is not None:
-            rv = rv + f" since {self.when} ({self.how_long})"
+            rv = rv + " since " + self.when.strftime('%l:%M %P')
+            seconds = self.how_long.total_seconds()
+            if seconds >= (20 * 60):
+                # https://stackoverflow.com/a/539360
+                hours, remainder = divmod(seconds + 30, 3600)  # "+ 30" = round to minute
+                minutes, seconds = divmod(remainder, 60)
+                ts = '{:1}:{:02}'.format(int(hours), int(minutes))
+                rv = rv + " (" + ts + ")"
+
         return rv
 
     @property
