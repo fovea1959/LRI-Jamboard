@@ -6,14 +6,13 @@ import sys
 from threading import Lock
 
 import flask
-from flask import Flask, render_template, url_for, redirect, request, flash, session, copy_current_request_context
+from flask import Flask, render_template, request, session, copy_current_request_context
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from flask_socketio import SocketIO, emit, disconnect
 
 import LRIDao as Dao
 import LRIEntities as E
-from LRIEntities import Team
 
 
 class MyEncoder(json.JSONEncoder):
@@ -78,6 +77,7 @@ def shutdown_session(response_or_exc):
             db_session.commit()
         else:
             logging.info("session %s is clean, no commit", db_session)
+        db_session.close()
 
 
 @app.errorhandler(NoResultFound)
@@ -212,7 +212,7 @@ def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
 
 @socketio.on('inspector-pulldown-available')
 def inspector_pulldown_available(message):
-    do_inspector_pulldown(message,{
+    do_inspector_pulldown(message, {
         'status': E.Inspector.STATUS_AVAILABLE,
         'with_team': None,
         'when': None
@@ -221,7 +221,7 @@ def inspector_pulldown_available(message):
 
 @socketio.on('inspector-pulldown-break')
 def inspector_pulldown_break(message):
-    do_inspector_pulldown(message,{
+    do_inspector_pulldown(message, {
         'status': E.Inspector.STATUS_ON_BREAK,
         'with_team': None,
         'when': datetime.datetime.now()
@@ -230,7 +230,7 @@ def inspector_pulldown_break(message):
 
 @socketio.on('inspector-pulldown-field')
 def inspector_pulldown_field(message):
-    do_inspector_pulldown(message,{
+    do_inspector_pulldown(message, {
         'status': E.Inspector.STATUS_ON_FIELD,
         'with_team': None,
         'when': datetime.datetime.now()
@@ -239,7 +239,7 @@ def inspector_pulldown_field(message):
 
 @socketio.on('inspector-pulldown-gone')
 def inspector_pulldown_gone(message):
-    do_inspector_pulldown(message,{
+    do_inspector_pulldown(message, {
         'status': E.Inspector.STATUS_GONE,
         'with_team': None,
         'when': None
@@ -249,7 +249,7 @@ def inspector_pulldown_gone(message):
 @socketio.on('inspector-pulldown-team')
 def inspector_pulldown_gone(message):
     db_session = get_db_session()
-    do_inspector_pulldown(message,{
+    do_inspector_pulldown(message, {
         'status': E.Inspector.STATUS_WITH_TEAM,
         'with_team': message['team'],
         'when': datetime.datetime.now()
@@ -284,7 +284,7 @@ def do_send_status(db_session=None, emitter=emit):
 
 @socketio.on('*')
 def catch_all(event, data):
-    logging.info ("catch_all: %s %s", event, data)
+    logging.info("catch_all: %s %s", event, data)
 
 
 @socketio.event
@@ -296,7 +296,7 @@ def disconnect_request():
     session['receive_count'] = session.get('receive_count', 0) + 1
     # for this emit we use a callback function
     # when the callback function is invoked we know that the message has been
-    # received and it is safe to disconnect
+    # received so it is safe to disconnect
     emit('disconnect_response',
          {'data': 'Disconnected!'},
          callback=can_disconnect)
@@ -354,7 +354,7 @@ if __name__ == '__main__':
     # need to look at https://stackoverflow.com/a/73094988 to handle access logs
 
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.pool").setLevel(logging.INFO)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.DEBUG)
     logging.getLogger('socketio.server').setLevel(logging.WARNING)
     logging.getLogger('engineio.server').setLevel(logging.WARNING)
     main()
