@@ -38,6 +38,8 @@ class Base(DeclarativeBase):
 class Team(Base):
     __tablename__ = 'teams'
 
+    STATUS_PASSED = "passed inspection"
+
     number: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     school_name: Mapped[str] = mapped_column(Text)
@@ -52,7 +54,7 @@ class Team(Base):
     def status(self):
         rv = []
         if self.passed_inspection:
-            rv.append('Passed Inspection')
+            rv.append(self.STATUS_PASSED)
         else:
             if self.weighed:
                 rv.append('Weighed')

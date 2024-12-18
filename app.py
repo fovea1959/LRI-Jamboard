@@ -215,7 +215,9 @@ def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
         setattr(inspector, n, v)
     logging.info('after:  %s', inspector.as_dict())
     db_session.add(inspector)
+    logging.debug('Committing %s (inspector)', db_session.connection().connection.dbapi_connection)
     db_session.commit()
+    logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
 
     socketio.emit('inspector', inspector.as_dict())
 
@@ -257,7 +259,7 @@ def inspector_pulldown_gone(message):
 
 
 @socketio.on('inspector-pulldown-team')
-def inspector_pulldown_gone(message):
+def inspector_pulldown_team(message):
     db_session = get_db_session()
     do_inspector_pulldown(message, {
         'status': E.Inspector.STATUS_WITH_TEAM,
@@ -270,9 +272,10 @@ def inspector_pulldown_gone(message):
     team.seen = True
     logging.info('after:  %s', team.as_dict())
     db_session.add(team)
+    logging.debug('Committing %s (team)', db_session.connection().connection.dbapi_connection)
     db_session.commit()
+    logging.debug('Committed  %s (team)', db_session.connection().connection.dbapi_connection)
 
-    logging.info('aafter: %s', team.as_dict())
     socketio.emit('team', team.as_dict())
 
 
@@ -284,7 +287,7 @@ def send_status(message):
 def do_send_status(db_session=None, emitter=emit):
     complete = 0
     total = 0
-    for item in db_session.query(E.Team).all():
+    for item in db_session.query(E.Team).all():  # type: E.Team
         total += 1
         if item.status == item.STATUS_PASSED:
             complete += 1
