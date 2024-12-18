@@ -38,32 +38,32 @@ class Base(DeclarativeBase):
 class Team(Base):
     __tablename__ = 'teams'
 
-    STATUS_WEIGHED = "Weighed"
-    STATUS_PASSED = "Passed Inspection"
-    STATUS_NONE = ""
-
     number: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     school_name: Mapped[str] = mapped_column(Text)
     city: Mapped[str] = mapped_column(Text)
 
-    seen: Mapped[bool] = mapped_column(Boolean)
-    weighed: Mapped[bool] = mapped_column(Boolean)
-    passed_inspection: Mapped[bool] = mapped_column(Boolean)
+    seen: Mapped[bool] = mapped_column(Boolean, default=False)
+    weighed: Mapped[bool] = mapped_column(Boolean, default=False)
+    partially_inspected: Mapped[bool] = mapped_column(Boolean, default=False)
+    passed_inspection: Mapped[bool] = mapped_column(Boolean, default=False)
 
     @property
     def status(self):
-        rv = self.STATUS_NONE
-        if self.weighed:
-            if self.passed_inspection:
-                rv = self.STATUS_PASSED
-            else:
-                rv = self.STATUS_WEIGHED
-        return rv
+        rv = []
+        if self.passed_inspection:
+            rv.append('Passed Inspection')
+        else:
+            if self.weighed:
+                rv.append('Weighed')
+            if self.partially_inspected:
+                rv.append('Partially inspected')
+        return ', '.join(rv)
+
 
     @property
     def present(self):
-        return self.seen or self.weighed or self.passed_inspection
+        return self.seen or self.weighed or self.partially_inspected or self.passed_inspection
 
     def as_dict(self):
         rv = super().as_dict()

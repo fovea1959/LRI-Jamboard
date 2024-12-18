@@ -172,6 +172,16 @@ def team_pulldown_unweigh(message):
     do_team_pulldown(message, {'weighed': False}, db_session=get_db_session())
 
 
+@socketio.on('team-pulldown-partial')
+def team_pulldown_partial(message):
+    do_team_pulldown(message, {'partially_inspected': True}, db_session=get_db_session())
+
+
+@socketio.on('team-pulldown-unpartial')
+def team_pulldown_unpartial(message):
+    do_team_pulldown(message, {'partially_inspected': False}, db_session=get_db_session())
+
+
 @socketio.on('team-pulldown-pass')
 def team_pulldown_pass(message):
     do_team_pulldown(message, {'passed_inspection': True}, db_session=get_db_session())

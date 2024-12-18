@@ -62,6 +62,11 @@
                       <use xlink:href="/static/bootstrap-icons.svg#rulers"/>
                     </svg>
                   </span>
+                  <span style="color: #c0c000;" class="partially-inspected-icon">
+                    <svg class="bi" width="32" height="32" fill="currentColor">
+                      <use xlink:href="/static/bootstrap-icons.svg#clipboard-data"/>
+                    </svg>
+                  </span>
                   <span style="color: #00c000;" class="passed-icon">
                     <svg class="bi" width="64" height="64" fill="currentColor">
                       <use xlink:href="/static/bootstrap-icons.svg#check-all"/>
@@ -112,11 +117,13 @@
       <div class="modal-footer justify-content-between">
         <span>
           <button id="team-pulldown-see" class="btn btn-primary x-lri-team-pulldown-item">Mark Seen</button>
-          <button id="team-pulldown-unsee" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Seen</button>
+          <button id="team-pulldown-unsee" class="btn btn-primary x-lri-team-pulldown-item">Unmark Seen</button>
           <button id="team-pulldown-weigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Weighed</button>
-          <button id="team-pulldown-unweigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Weighed</button>
-          <button id="team-pulldown-pass" class="btn btn-primary x-lri-team-pulldown-item">Mark Passed</button>
-          <button id="team-pulldown-unpass" class="btn btn-primary x-lri-team-pulldown-item">Mark Not Passed</button>
+          <button id="team-pulldown-unweigh" class="btn btn-primary x-lri-team-pulldown-item">Unmark Weighed</button>
+          <button id="team-pulldown-partial" class="btn btn-primary x-lri-team-pulldown-item">Mark Partially Inspected</button>
+          <button id="team-pulldown-unpartial" class="btn btn-primary x-lri-team-pulldown-item">Unmark Partially Inspected</button>
+          <button id="team-pulldown-pass" class="btn btn-primary x-lri-team-pulldown-item">Mark Passed Inspection</button>
+          <button id="team-pulldown-unpass" class="btn btn-primary x-lri-team-pulldown-item">Unmark Passed Inspection</button>
         </span>
       </div>
     </div>
@@ -224,19 +231,27 @@ $(document).ready(function() {
 
     removeClassStartingWith($('#t-' + number + '-box'), 'x-lri-t-');
     cn = '';
+
     weighed_icon = false;
     passed_inspection_icon = false;
+    partially_inspected_icon = false;
     if (msg.passed_inspection) {
       cn = 'passed-inspection';
       passed_inspection_icon = true;
     } else if (msg.present) {
       weighed_icon = msg.weighed;
+      partially_inspected_icon = msg.partially_inspected;
       cn = 'present';
     }
     if (weighed_icon) {
       $('#t-' + number + '-box .weighed-icon').show();
     } else {
       $('#t-' + number + '-box .weighed-icon').hide();
+    }
+    if (partially_inspected_icon) {
+      $('#t-' + number + '-box .partially-inspected-icon').show();
+    } else {
+      $('#t-' + number + '-box .partially-inspected-icon').hide();
     }
     if (passed_inspection_icon) {
       $('#t-' + number + '-box .passed-icon').show();
@@ -257,13 +272,19 @@ $(document).ready(function() {
 
     var show_see = false;
     var show_unsee = false;
+    var show_partial = false;
+    var show_unpartial = false;
     if (team.passed_inspection) {
       $('#team-pulldown-weigh').hide();
       $('#team-pulldown-unweigh').hide();
       $('#team-pulldown-pass').hide();
       $('#team-pulldown-unpass').show();
+      $('#team-pulldown-partial').hide();
+      $('#team-pulldown-unpartial').show();
     } else {
       $('#team-pulldown-unpass').hide();
+      show_partial = ! team.partially_inspected;
+      show_unpartial = team.partially_inspected;
       if (team.weighed) {
         $('#team-pulldown-weigh').hide();
         $('#team-pulldown-unweigh').show();
@@ -289,6 +310,16 @@ $(document).ready(function() {
       $('#team-pulldown-unsee').show();
     } else {
       $('#team-pulldown-unsee').hide();
+    }
+    if (show_partial) {
+      $('#team-pulldown-partial').show();
+    } else {
+      $('#team-pulldown-partial').hide();
+    }
+    if (show_unpartial) {
+      $('#team-pulldown-unpartial').show();
+    } else {
+      $('#team-pulldown-unpartial').hide();
     }
 
     $('.x-lri-pulldown-team-number').text(team.number.toString())

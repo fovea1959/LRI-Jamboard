@@ -29,7 +29,8 @@ def main(argv):
                 school_name=team_dict['school_name'],
                 city=team_dict['city'],
                 seen=team_number in (2959,),
-                weighed=team_number in (1940, 3620),
+                weighed=team_number in (74, 1940, 3620),
+                partially_inspected=team_number in (1940, ),
                 passed_inspection=team_number in (3620, ),
             )
             session.add(team)
