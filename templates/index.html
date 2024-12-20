@@ -28,11 +28,19 @@
 }
 
 #page-table .x-lri-blank {
-  // background-color: #808080;
+  background-color: var(--bs-border-color);
 }
 
 .dropdown-menu.drop {
   min-width: 1000px
+}
+
+.partial-color {
+  color: #dec03c;
+}
+
+.complete-color {
+  color: #00c000;
 }
 </style>
 {% endblock %}
@@ -53,29 +61,32 @@
             {% else %}
               <td id="t-{{team.number}}-box" class="x-lri-t- cm x-lri-team" data-team-number="{{team.number}}">
                 <span id="t-{{team.number}}" class="d-none"></span>
-                <div class="h1">
+                <div class="h2">
                   <span>
                     {{ team.number }}
                   </span>
-                  <span style="color: #00c000;" class="weighed-icon">
-                    <svg class="bi" width="32" height="32" fill="currentColor">
+                  <span class="weighed-icon partial-color">
+                    <svg class="bi" width="24" height="24" fill="currentColor">
                       <use xlink:href="/static/bootstrap-icons.svg#rulers"/>
                     </svg>
                   </span>
-                  <span style="color: #c0c000;" class="partially-inspected-icon">
-                    <svg class="bi" width="32" height="32" fill="currentColor">
+                  <span class="partially-inspected-icon partial-color">
+                    <svg class="bi" width="24" height="24" fill="currentColor">
                       <use xlink:href="/static/bootstrap-icons.svg#clipboard-data"/>
                     </svg>
                   </span>
-                  <span style="color: #00c000;" class="passed-icon">
-                    <svg class="bi" width="64" height="64" fill="currentColor">
+                  <span class="passed-icon complete-color">
+                    <svg class="bi" width="24" height="24" fill="currentColor">
                       <use xlink:href="/static/bootstrap-icons.svg#check-all"/>
                     </svg>
                   </span>
                 </div>
-                <div class="h6">{{ team.name }}</div>
-                <div class="h6">{{ team.city }}</div>
-                <div id="t-{{team.number}}-status"></div>
+                <div>
+                  <span class="h6">{{ team.name }}</span>
+                  <br/>
+                  <span class="fs-6">{{ team.city }}</span>
+                </div>
+                <div id="t-{{team.number}}-status" class="pt-2"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -84,16 +95,18 @@
         </table>
       </td>
       <td class="col-3 x-lri-blank">
-        <div id="time" class="h1 text-end">&nbsp;</div>
-        <div id="overall-status" class="h1 text-end">&nbsp;</div>
-        <div id="inspectors">
-        {% for i in inspectors %}
-          <div id="i-{{ i.id }}-box" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
-            <span id="i-{{ i.id }}" class="d-none"></span>
-            <div class="h4 m-0">{{ i.name }}:</div>
-            <div id="i-{{ i.id }}-status">&nbsp;</div>
+        <div>
+          <div id="time" class="h1 text-end">&nbsp;</div>
+          <div id="overall-status" class="h1 text-end">&nbsp;</div>
+          <div id="inspectors d-flex">
+          {% for i in inspectors %}
+            <div id="i-{{ i.id }}-box" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
+              <span id="i-{{ i.id }}" class="d-none"></span>
+              <div class="h4 m-0">{{ i.name }}:</div>
+              <div id="i-{{ i.id }}-status" class="fs-5">&nbsp;</div>
+            </div>
+          {% endfor %}
           </div>
-        {% endfor %}
         </div>
       </td>
     </tr>

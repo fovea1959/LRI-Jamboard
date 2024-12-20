@@ -38,7 +38,7 @@ class Base(DeclarativeBase):
 class Team(Base):
     __tablename__ = 'teams'
 
-    STATUS_PASSED = "passed inspection"
+    STATUS_PASSED = "Passed inspection"
 
     number: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
