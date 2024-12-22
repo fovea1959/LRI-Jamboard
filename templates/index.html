@@ -113,6 +113,22 @@
   </table>
 </div>
 
+<div id="make-fullscreen" class="position-absolute bottom-0 end-0">
+  <div class="m-5">
+    <svg class="bi" width="24" height="24" fill="currentColor">
+      <use xlink:href="/static/bootstrap-icons.svg#fullscreen"/>
+    </svg>
+  </div>
+</div>
+
+<div id="exit-fullscreen" class="position-absolute bottom-0 end-0">
+  <div class="m-5">
+    <svg class="bi" width="24" height="24" fill="currentColor">
+      <use xlink:href="/static/bootstrap-icons.svg#fullscreen-exit"/>
+    </svg>
+  </div>
+</div>
+
 <!-- the modal for changing team status -->
 <div class="modal fade" id="team-pulldown">
   <div class="modal-dialog modal-lg">
@@ -188,7 +204,6 @@
   </div>
 </div>
 
-
 <script src="/static/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
 
@@ -201,6 +216,16 @@ function removeClassStartingWith(node, begin) {
   node.removeClass (function (index, className) {
     return (className.match ( new RegExp("\\b"+begin+"\\S*", "g") ) || []).join(' ');
   });
+}
+
+function fiddle_fullscreen() {
+  if (document.fullscreenElement) {
+    $('#make-fullscreen').hide();
+    $('#exit-fullscreen').show();
+  } else {
+    $('#exit-fullscreen').hide();
+    $('#make-fullscreen').show();
+  }
 }
 
 $(document).ready(function() {
@@ -274,6 +299,19 @@ $(document).ready(function() {
     $('#t-' + number + '-box').addClass('x-lri-t-' + cn);
 
     if (cb) cb();
+  });
+
+  fiddle_fullscreen();
+  $(document).on('fullscreenchange', function() {
+    fiddle_fullscreen();
+  });
+
+  $('#make-fullscreen').on('click', function(e) {
+    document.documentElement.requestFullscreen();
+  });
+
+  $('#exit-fullscreen').on('click', function(e) {
+    document.exitFullscreen();
   });
 
   // user clicked on an team
