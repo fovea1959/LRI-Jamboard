@@ -124,6 +124,7 @@ def background_thread():
     while True:
         logging.info("updating inspectors")
         do_send_inspectors(db_session=db_session, emitter=socketio.emit)
+        do_send_time(emitter=socketio.emit)
         socketio.sleep(60)
 
 
@@ -220,6 +221,7 @@ def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
     logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
 
     socketio.emit('inspector', inspector.as_dict())
+    do_send_time(emitter=socketio.emit)
 
 
 @socketio.on('inspector-pulldown-available')
@@ -277,6 +279,7 @@ def inspector_pulldown_team(message):
     logging.debug('Committed  %s (team)', db_session.connection().connection.dbapi_connection)
 
     socketio.emit('team', team.as_dict())
+    do_send_time(emitter=socketio.emit)
 
 
 @socketio.event
@@ -291,8 +294,14 @@ def do_send_status(db_session=None, emitter=emit):
         total += 1
         if item.status == item.STATUS_PASSED:
             complete += 1
-    rv = G(total=total, complete=complete, time=datetime.datetime.now().strftime('%l:%M %p'))
+    rv = G(total=total, complete=complete)
     emitter('status', rv)
+    do_send_time(emitter=socketio.emit)
+
+
+def do_send_time(emitter=emit):
+    rv = G(time=datetime.datetime.now().strftime('%l:%M %p'))
+    emitter('time', rv)
 
 
 @socketio.on('*')
