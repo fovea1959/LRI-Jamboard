@@ -200,10 +200,29 @@ def send_inspectors(message):
     do_send_inspectors(db_session=get_db_session())
 
 
-def do_send_inspectors(db_session=None, emitter=emit):
+def do_send_inspectors_old(db_session=None, emitter=emit):
     for item in db_session.query(E.Inspector).all():
         d = item.as_dict()
         emitter('inspector', d)
+
+
+def get_all_inspectors(db_session=None):
+    rv = []
+    for item in db_session.query(E.Inspector).all():
+        rv.append(item.as_dict())
+    return rv
+
+
+def do_send_inspectors(db_session=None, emitter=emit):
+    rv = get_all_inspectors(db_session)
+    emitter('inspectors', rv)
+
+
+@app.route('/debug/i')
+def debug_inspectors():
+    db_session = get_db_session()
+    rv = get_all_inspectors(db_session)
+    return rv
 
 
 def do_inspector_pulldown(message=None, change_dict=None, db_session=None):

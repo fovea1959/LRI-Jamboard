@@ -16,7 +16,7 @@ def main(argv):
         pass
     Base.metadata.create_all(Dao.engine)
 
-    with open('2022misjo_teams.json', 'r') as f:
+    with open('2025misjo_teams.json', 'r') as f:
         blue_alliance = json.load(f)
     print('# of teams:', len(blue_alliance))
 
@@ -41,6 +41,7 @@ def main(argv):
             ('Doug W', Inspector.STATUS_AVAILABLE, None),
             ('Kevin S', Inspector.STATUS_GONE, None),
             ('Greg F', Inspector.STATUS_GONE, None),
+            ('John H', Inspector.STATUS_INSPECTION_MANAGER, None),
         ]
         for n1, s, when_str in n:
             when = None if when_str is None else datetime.datetime.fromisoformat(when_str)

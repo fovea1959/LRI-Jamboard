@@ -450,6 +450,20 @@ $(document).ready(function() {
     if (cb) cb();
   });
 
+  // server sent us information on all inspectors
+  socket.on('inspectors', function(msg, cb) {
+    console.log('inspectors', msg);
+    $.each(msg, function( index, inspector ) {
+      var inspector_id = inspector.id.toString();
+      $('#i-' + inspector_id).text(JSON.stringify(inspector));
+      $('#i-' + inspector_id).attr('data-o', JSON.stringify(inspector));
+
+      $('#i-' + inspector_id + '-status').text(inspector.status_text);
+    });
+
+    if (cb) cb();
+  });
+
   // user clicked on an inspector
   $('.x-lri-inspector').on('click', function(e) {
     console.log('clicked', e);

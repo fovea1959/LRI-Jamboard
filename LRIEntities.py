@@ -12,8 +12,14 @@ from sqlalchemy.orm.base import Mapped
 
 class Base(DeclarativeBase):
     # https://stackoverflow.com/a/11884806
-    def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    def as_dict(self, *args) -> dict:
+        rv = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+        for name in dir(self.__class__):
+            if isinstance(getattr(self.__class__, name), property):
+                rv[name] = getattr(self, name)
+
+        return rv
 
     def _repr(self, **fields: typing.Dict[str, typing.Any]) -> str:
         # Helper for __repr__
@@ -30,7 +36,7 @@ class Base(DeclarativeBase):
             return f"<{self.__class__.__name__}({','.join(field_strings)})>"
         return f"<{self.__class__.__name__} {id(self)}>"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # override this one if necessary
         return self._repr(**self.as_dict())
 
@@ -50,8 +56,10 @@ class Team(Base):
     partially_inspected: Mapped[bool] = mapped_column(Boolean, default=False)
     passed_inspection: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    pit_location: Mapped[Optional[str]] = mapped_column(Text)
+
     @property
-    def status(self):
+    def status(self) -> str:
         rv = []
         if self.passed_inspection:
             rv.append(self.STATUS_PASSED)
@@ -62,16 +70,9 @@ class Team(Base):
                 rv.append('Partially inspected')
         return ', '.join(rv)
 
-
     @property
-    def present(self):
+    def present(self) -> bool:
         return self.seen or self.weighed or self.partially_inspected or self.passed_inspection
-
-    def as_dict(self):
-        rv = super().as_dict()
-        rv['status'] = self.status
-        rv['present'] = self.present
-        return rv
 
 
 class Inspector(Base):
@@ -83,14 +84,15 @@ class Inspector(Base):
     with_team: Mapped[Optional[int]] = mapped_column(Integer)
     when: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
 
+    STATUS_INSPECTION_MANAGER = "Inspection Manager"
     STATUS_AVAILABLE = "Available"
+    STATUS_WITH_TEAM = "With team"
     STATUS_ON_BREAK = "On break"
     STATUS_ON_FIELD = "On field"
     STATUS_GONE = "Gone"
-    STATUS_WITH_TEAM = "With team"
 
     @property
-    def status_text(self):
+    def status_text(self) -> str:
         rv = self.status
         if self.with_team is not None:
             rv = rv + f" {self.with_team}"
@@ -110,13 +112,20 @@ class Inspector(Base):
         return rv
 
     @property
-    def how_long(self):
+    def how_long(self) -> Optional[datetime.timedelta]:
         if self.when is None:
             return None
         return datetime.datetime.now() - self.when
 
-    def as_dict(self):
-        rv = super().as_dict()
-        rv['status_text'] = self.status_text
-        rv['how_long'] = self.how_long
-        return rv
+    @property
+    def sort_priority(self) -> int:
+        if self.status == self.STATUS_INSPECTION_MANAGER:
+            return 0
+        elif self.status == self.STATUS_AVAILABLE:
+            return 1000
+        elif self.status == self.STATUS_WITH_TEAM:
+            return 10000000 - int(self.how_long.total_seconds())
+        elif self.status in (self.STATUS_ON_BREAK, self.STATUS_ON_FIELD):
+            return 20000000 - int(self.how_long.total_seconds())
+        else:
+            return 99999999
