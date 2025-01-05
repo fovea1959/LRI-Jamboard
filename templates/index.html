@@ -98,7 +98,7 @@
         <div>
           <div id="time" class="h1 text-end">&nbsp;</div>
           <div id="overall-status" class="h1 text-end">&nbsp;</div>
-          <div id="inspectors d-flex">
+          <div id="inspectors">
           {% for i in inspectors %}
             <div id="i-{{ i.id }}-box" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
               <span id="i-{{ i.id }}" class="d-none"></span>
@@ -106,6 +106,13 @@
               <div id="i-{{ i.id }}-status" class="fs-5">&nbsp;</div>
             </div>
           {% endfor %}
+            <div>
+              <span id="add-inspector-icon">
+                <svg class="bi" width="24" height="24" fill="currentColor">
+                  <use xlink:href="/static/bootstrap-icons.svg#person-add"/>
+                </svg>
+              </span>
+            </div>
           </div>
         </div>
       </td>
@@ -199,6 +206,34 @@
             </div>
           </span>
         </span>
+        <span class="">
+          <svg class="bi" width="24" height="24" fill="currentColor">
+            <use xlink:href="/static/bootstrap-icons.svg#person-dash"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- the modal for adding an inspector -->
+<div class="modal fade" id="add-inspector-pulldown">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title">
+          Add inspector
+        </h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="add-inspector-name" class="form-label">Inspector name</label>
+        <input type="text" class="form-control" id="add-inspector-name" placeholder="Jo I">
+      </div>
+      <div class="modal-footer justify-content-between">
+        <span>
+          <button id="add-inspector-ok" class="btn btn-primary">OK</button>
+        </span>
       </div>
     </div>
   </div>
@@ -231,6 +266,7 @@ function fiddle_fullscreen() {
 $(document).ready(function() {
   $(".weighed-icon").hide();
   $(".passed-icon").hide();
+  $(".partially-inspected-icon").hide();
 
   // Connect to the Socket.IO server.
   // The connection URL has the following format, relative to the current page:
@@ -243,6 +279,12 @@ $(document).ready(function() {
     socket.emit('send_teams', {});
     socket.emit('send_inspectors', {});
     socket.emit('send_status', {});
+  });
+
+  // server wants us to refresh entire screen
+  socket.on('refresh', function(msg, cb) {
+    if (cb) cb();
+    location.reload();
   });
 
   // server sent us a status summary
@@ -307,20 +349,23 @@ $(document).ready(function() {
     if (cb) cb();
   });
 
+  // update the fullscreen / exit fullscreen icons as necessary
   fiddle_fullscreen();
   $(document).on('fullscreenchange', function() {
     fiddle_fullscreen();
   });
 
+  // user clicked on fullscreen icon
   $('#make-fullscreen').on('click', function(e) {
     document.documentElement.requestFullscreen();
   });
 
+  // user clicked on exit fullscreen icon
   $('#exit-fullscreen').on('click', function(e) {
     document.exitFullscreen();
   });
 
-  // user clicked on an team
+  // user clicked on a team
   $('.x-lri-team').on('click', function(e) {
     console.log('clicked', e);
     team_number = e.currentTarget.dataset.teamNumber;
@@ -379,8 +424,8 @@ $(document).ready(function() {
       $('#team-pulldown-unpartial').hide();
     }
 
-    $('.x-lri-pulldown-team-number').text(team.number.toString())
-    $('.x-lri-pulldown-team-name').text(team.name)
+    $('.x-lri-pulldown-team-number').text(team.number.toString());
+    $('.x-lri-pulldown-team-name').text(team.name);
     let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
     modal.show();
   });
@@ -390,8 +435,8 @@ $(document).ready(function() {
     console.log('clicked', e);
     console.log('button id is', e.target.id);
     $('#team-pulldown').modal('hide');
-    var number = Number($('#team-pulldown-team-number').text())
-    socket.emit(e.target.id, {'number': number})
+    var number = Number($('#team-pulldown-team-number').text());
+    socket.emit(e.target.id, {'number': number});
   });
 
   // server sent us information on an inspector
@@ -416,6 +461,21 @@ $(document).ready(function() {
     $('.x-lri-pulldown-inspector-name').text(inspector.name)
     let modal = new bootstrap.Modal(document.getElementById('inspector-pulldown'));
     modal.show();
+  });
+
+  // user clicked on the add inspector icon
+  $('#add-inspector-icon').on('click', function(e) {
+    console.log('clicked', e);
+    let modal = new bootstrap.Modal(document.getElementById('add-inspector-pulldown'));
+    modal.show();
+  });
+
+  // user clicked ok in the add inspector modal
+  $('#add-inspector-ok').on('click', function(e) {
+    console.log('clicked', e);
+    $('#add-inspector-pulldown').modal('hide');
+    var name = $('#add-inspector-name').val();
+    socket.emit('add-inspector', {'name': name});
   });
 
   // user clicked on a button in the inspector modal

@@ -7,7 +7,7 @@ from sqlalchemy.engine.result import ScalarResult
 engine = create_engine('sqlite:///LRI.db', echo=False)
 
 
-def team_by_number(session: Session = None, team_number: int = None) -> Team:
+def team_by_number(session: Session = None, team_number: int = None) -> ScalarResultTeam:
     stmt = select(Team).where(Team.number == team_number)
     result = session.scalars(stmt).one()
     return result

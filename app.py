@@ -151,6 +151,7 @@ def do_team_pulldown(message=None, change_dict=None, db_session=None):
 
     socketio.emit('team', team.as_dict())
     do_send_status(db_session=db_session, emitter=socketio.emit)
+    do_send_time(emitter=socketio.emit)
 
 
 @socketio.on('team-pulldown-see')
@@ -280,6 +281,22 @@ def inspector_pulldown_team(message):
 
     socketio.emit('team', team.as_dict())
     do_send_time(emitter=socketio.emit)
+
+
+@socketio.on('add-inspector')
+def add_inspector(message):
+    logging.info('got', message)
+    db_session = get_db_session()
+    name = message.get('name').strip()
+    if name != '':
+        inspector = E.Inspector(
+            name=name,
+            status=E.Inspector.STATUS_AVAILABLE,
+            when=None,
+        )
+        db_session.add(inspector)
+        db_session.commit()
+        socketio.emit('refresh')
 
 
 @socketio.event
