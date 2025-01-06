@@ -50,7 +50,7 @@
 <div class="container p-0 m-0">
   <table class="table vh-100 vw-100" id="page-table">
     <tr>
-      <td class="p-0 m-0 col-9">
+      <td class="p-0 m-0 col-10">
         <table id="team-table" class="table table-bordered vh-100" style="table-layout: fixed;">
         {% for row in row_data %}
           <tr>
@@ -60,7 +60,7 @@
               <td class="x-lri-blank"></td>
             {% else %}
               <td id="t-{{team.number}}" class="x-lri-t- cm x-lri-team" data-team-number="{{team.number}}">
-                <div class="h2">
+                <div class="h1">
                   <span>
                     {{ team.number }}
                   </span>
@@ -85,7 +85,11 @@
                   <br/>
                   <span class="fs-6">{{ team.city }}</span>
                 </div>
-                <div class="pt-2 x-lri-status"></div>
+                <div>
+                  <span class="fs-6">{{ team.pit_location }}</span>
+                </div>
+                <div class="pt-2 x-lri-status d-none"></div>
+                <div class="pt-2 x-lri-inspector-names">Joe I</div>
               </td>
             {% endif %}
           {% endfor %}
@@ -93,24 +97,55 @@
         {% endfor %}
         </table>
       </td>
-      <td class="col-3 x-lri-blank">
+      <td class="col-2 x-lri-blank">
         <div>
-          <div id="time" class="h1 text-end">&nbsp;</div>
-          <div id="overall-status" class="h1 text-end">&nbsp;</div>
+          <div class="h2 text-end">
+            <span id="time">&nbsp;</span>
+            <br/>
+            <span id="overall-status">&nbsp;</span>
+          </div>
+
+          <div class="border-top border-bottom border-dark">
+            <div class="py-1">
+              <span class="partial-color">
+                <svg class="bi" width="24" height="24" fill="currentColor">
+                  <use xlink:href="/static/bootstrap-icons.svg#rulers"/>
+                </svg>
+              </span>
+              <span>Weighed</span>
+            </div>
+            <div class="py-1">
+              <span class="partial-color">
+                <svg class="bi" width="24" height="24" fill="currentColor">
+                  <use xlink:href="/static/bootstrap-icons.svg#clipboard-data"/>
+                </svg>
+              </span>
+              <span>Partially inspected</span>
+            </div>
+            <div class="py-1">
+              <span class="complete-color">
+                <svg class="bi" width="24" height="24" fill="currentColor">
+                  <use xlink:href="/static/bootstrap-icons.svg#check-circle-fill"/>
+                </svg>
+              </span>
+              <span>Inspection complete</span>
+            </div>
+          </div>
+
           <div id="inspectors">
           {% for i in inspectors %}
             <div id="i-{{ i.id }}" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
-              <div class="h4 m-0">{{ i.name }}:</div>
-              <div class="fs-5 x-lri-status">&nbsp;</div>
+              <div class="h5 m-0">{{ i.name }}:</div>
+              <div class="fs-6 x-lri-status">&nbsp;</div>
             </div>
           {% endfor %}
-            <div>
-              <span id="add-inspector-icon">
-                <svg class="bi" width="24" height="24" fill="currentColor">
-                  <use xlink:href="/static/bootstrap-icons.svg#person-add"/>
-                </svg>
-              </span>
-            </div>
+          </div>
+          <div>
+            <span id="add-inspector-icon">
+              <svg class="bi" width="24" height="24" fill="currentColor">
+                <use xlink:href="/static/bootstrap-icons.svg#person-add"/>
+              </svg>
+            </span>
           </div>
         </div>
       </td>
@@ -451,7 +486,7 @@ $(document).ready(function() {
     console.log('inspectors', msg);
     $.each(msg, function( index, inspector ) {
       var inspector_id = inspector.id.toString();
-      $('#i-' + inspector_id).data('o', inspector)
+      $('#i-' + inspector_id).data('o', inspector);
       // $('#i-' + inspector_id + '-box').text(JSON.stringify(inspector));
       $('#i-' + inspector_id).attr('data-o', JSON.stringify(inspector));
 
