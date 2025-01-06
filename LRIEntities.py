@@ -74,6 +74,14 @@ class Team(Base):
     def present(self) -> bool:
         return self.seen or self.weighed or self.partially_inspected or self.passed_inspection
 
+    def as_dict(self, team_to_inspector_dict: dict = None) -> dict:
+        rv = super().as_dict()
+        inspector_names = ''
+        if team_to_inspector_dict is not None:
+            inspector_names = ', '.join([i.name for i in team_to_inspector_dict.get(self.number, [])])
+        rv['inspector_names'] = inspector_names
+        return rv
+
 
 class Inspector(Base):
     __tablename__ = 'inspectors'
@@ -104,9 +112,9 @@ class Inspector(Base):
                 hours, remainder = divmod(seconds + 30, 3600)  # "+ 30" = round to minute
                 minutes, seconds = divmod(remainder, 60)
                 if hours < 1:
-                    ts = '{} minutes'.format(int(minutes))
+                    ts = '{} m'.format(int(minutes))
                 else:
-                    ts = '{} hours, {} minutes'.format(int(hours), int(minutes))
+                    ts = '{} h, {} m'.format(int(hours), int(minutes))
                 rv = rv + " (" + ts + ")"
 
         return rv

@@ -131,72 +131,79 @@ def background_thread():
 @socketio.event
 def send_teams(message):
     logging.info("got send_teams")
-    for item in get_db_session().query(E.Team).all():
-        d = item.as_dict()
+    db_session = get_db_session()
+    team_to_inspector_dict = Dao.inspectors_with_team_dict(db_session)
+    for team in db_session.query(E.Team).all():  # type: E.Team
+        # logging.info("got %s %s", type(team), team)
+        d = team.as_dict(team_to_inspector_dict)
         emit('team', d)
 
 
-def do_team_pulldown(message=None, change_dict=None, db_session=None):
-    logging.info('doing team pulldown: %s %s', message, change_dict)
+def perform_team_pulldown_action(message=None, change_dict=None, db_session=None):
+    logging.info('performing team pulldown: %s %s', message, change_dict)
     if change_dict is None:
         return
 
     team = Dao.team_by_number(db_session, message.get('number', None))
-    logging.info('before: %s', team.as_dict())
+    logging.info('t_pulldown: t before = %s', team.as_dict())
     for n, v in change_dict.items():
         setattr(team, n, v)
-    logging.info('after:  %s', team.as_dict())
+    logging.info('t_pulldown: t after  = %s', team.as_dict())
     db_session.add(team)
     db_session.commit()
 
-    socketio.emit('team', team.as_dict())
+    inspector_map = Dao.inspectors_with_team_dict(db_session)
+    d = team.as_dict(inspector_map)
+    logging.info('t_pulldown: sending  = %s', d)
+
+    socketio.emit('team', d)
     do_send_status(db_session=db_session, emitter=socketio.emit)
     do_send_time(emitter=socketio.emit)
 
 
 @socketio.on('team-pulldown-see')
 def team_pulldown_seen(message):
-    do_team_pulldown(message, {'seen': True}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'seen': True}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-unsee')
 def team_pulldown_unseen(message):
-    do_team_pulldown(message, {'seen': False}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'seen': False}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-weigh')
 def team_pulldown_weigh(message):
-    do_team_pulldown(message, {'weighed': True}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'weighed': True}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-unweigh')
 def team_pulldown_unweigh(message):
-    do_team_pulldown(message, {'weighed': False}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'weighed': False}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-partial')
 def team_pulldown_partial(message):
-    do_team_pulldown(message, {'partially_inspected': True}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'partially_inspected': True}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-unpartial')
 def team_pulldown_unpartial(message):
-    do_team_pulldown(message, {'partially_inspected': False}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'partially_inspected': False}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-pass')
 def team_pulldown_pass(message):
-    do_team_pulldown(message, {'passed_inspection': True}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'passed_inspection': True}, db_session=get_db_session())
 
 
 @socketio.on('team-pulldown-unpass')
 def team_pulldown_unpass(message):
-    do_team_pulldown(message, {'passed_inspection': False}, db_session=get_db_session())
+    perform_team_pulldown_action(message, {'passed_inspection': False}, db_session=get_db_session())
 
 
 @socketio.event
 def send_inspectors(message):
-    logging.info("got send_inspectors")
+    # logging.info("got send_inspectors")
     do_send_inspectors(db_session=get_db_session())
 
 
@@ -219,20 +226,38 @@ def debug_inspectors():
     return rv
 
 
-def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
+def perform_inspector_pulldown_action(message=None, change_dict=None, db_session=None):
     logging.info('doing inspector pulldown: %s %s', message, change_dict)
     if change_dict is None:
         return
 
+    teams_to_update = set()
+
     inspector = Dao.inspector_by_id(db_session, message.get('id', None))
-    logging.info('before: %s', inspector.as_dict())
+
+    if inspector.with_team is not None:
+        teams_to_update.add(inspector.with_team)
+
+    logging.info('i_pulldown: i before = %s', inspector.as_dict())
     for n, v in change_dict.items():
         setattr(inspector, n, v)
-    logging.info('after:  %s', inspector.as_dict())
+    logging.info('i_pulldown: i after  = %s', inspector.as_dict())
+
+    if inspector.with_team is not None:
+        teams_to_update.add(inspector.with_team)
+
     db_session.add(inspector)
     logging.debug('Committing %s (inspector)', db_session.connection().connection.dbapi_connection)
     db_session.commit()
     logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
+
+    if len(teams_to_update) > 0:
+        team_with_inspector_dict = Dao.inspectors_with_team_dict(db_session)
+        for team_number in teams_to_update:  # type: int
+            team = Dao.team_by_number(db_session, team_number)
+            d = team.as_dict(team_with_inspector_dict)
+            logging.info('i_pulldown: sending %s', d)
+            socketio.emit('team', d)
 
     do_send_inspectors(db_session=db_session, emitter=socketio.emit)
     do_send_time(emitter=socketio.emit)
@@ -240,7 +265,7 @@ def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
 
 @socketio.on('inspector-pulldown-available')
 def inspector_pulldown_available(message):
-    do_inspector_pulldown(message, {
+    perform_inspector_pulldown_action(message, {
         'status': E.Inspector.STATUS_AVAILABLE,
         'with_team': None,
         'when': None
@@ -249,7 +274,7 @@ def inspector_pulldown_available(message):
 
 @socketio.on('inspector-pulldown-break')
 def inspector_pulldown_break(message):
-    do_inspector_pulldown(message, {
+    perform_inspector_pulldown_action(message, {
         'status': E.Inspector.STATUS_ON_BREAK,
         'with_team': None,
         'when': datetime.datetime.now()
@@ -258,7 +283,7 @@ def inspector_pulldown_break(message):
 
 @socketio.on('inspector-pulldown-field')
 def inspector_pulldown_field(message):
-    do_inspector_pulldown(message, {
+    perform_inspector_pulldown_action(message, {
         'status': E.Inspector.STATUS_ON_FIELD,
         'with_team': None,
         'when': datetime.datetime.now()
@@ -267,7 +292,7 @@ def inspector_pulldown_field(message):
 
 @socketio.on('inspector-pulldown-gone')
 def inspector_pulldown_gone(message):
-    do_inspector_pulldown(message, {
+    perform_inspector_pulldown_action(message, {
         'status': E.Inspector.STATUS_GONE,
         'with_team': None,
         'when': None
@@ -276,7 +301,7 @@ def inspector_pulldown_gone(message):
 
 @socketio.on('inspector-pulldown-im')
 def inspector_pulldown_im(message):
-    do_inspector_pulldown(message, {
+    perform_inspector_pulldown_action(message, {
         'status': E.Inspector.STATUS_INSPECTION_MANAGER,
         'with_team': None,
         'when': None
@@ -286,7 +311,7 @@ def inspector_pulldown_im(message):
 @socketio.on('inspector-pulldown-team')
 def inspector_pulldown_team(message):
     db_session = get_db_session()
-    do_inspector_pulldown(message, {
+    perform_inspector_pulldown_action(message, {
         'status': E.Inspector.STATUS_WITH_TEAM,
         'with_team': message['team'],
         'when': datetime.datetime.now()
@@ -301,13 +326,14 @@ def inspector_pulldown_team(message):
     db_session.commit()
     logging.debug('Committed  %s (team)', db_session.connection().connection.dbapi_connection)
 
-    socketio.emit('team', team.as_dict())
+    team_to_inspector_dict = Dao.inspectors_with_team_dict(db_session)
+    socketio.emit('team', team.as_dict(team_to_inspector_dict))
     do_send_time(emitter=socketio.emit)
 
 
 @socketio.on('add-inspector')
 def add_inspector(message):
-    logging.info('got', message)
+    # logging.info('got', message)
     db_session = get_db_session()
     name = message.get('name').strip()
     if name != '':

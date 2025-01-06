@@ -89,7 +89,7 @@
                   <span class="fs-6">{{ team.pit_location }}</span>
                 </div>
                 <div class="pt-2 x-lri-status d-none"></div>
-                <div class="pt-2 x-lri-inspector-names">Joe I</div>
+                <div class="pt-2 x-lri-inspector-names"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -317,6 +317,7 @@ function sort_inspectors(selector) {
     if (rv == 0) {
       a_v = $(a).data('o').name;
       b_v = $(b).data('o').name;
+      rv = a_v.localeCompare(b_v);
     }
     return rv;
   }).appendTo(wrapper);
@@ -373,6 +374,8 @@ $(document).ready(function() {
     var s = msg.status;
     if (s == '') s = '\u00a0';
     $('#t-' + number + ' .x-lri-status').text(s);
+
+    $('#t-' + number + ' .x-lri-inspector-names').text(msg.inspector_names)
 
     removeClassStartingWith($('#t-' + number), 'x-lri-t-');
     cn = '';
