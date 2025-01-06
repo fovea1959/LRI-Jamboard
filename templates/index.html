@@ -59,8 +59,7 @@
             {% if team is none %}
               <td class="x-lri-blank"></td>
             {% else %}
-              <td id="t-{{team.number}}-box" class="x-lri-t- cm x-lri-team" data-team-number="{{team.number}}">
-                <span id="t-{{team.number}}" class="d-none"></span>
+              <td id="t-{{team.number}}" class="x-lri-t- cm x-lri-team" data-team-number="{{team.number}}">
                 <div class="h2">
                   <span>
                     {{ team.number }}
@@ -86,7 +85,7 @@
                   <br/>
                   <span class="fs-6">{{ team.city }}</span>
                 </div>
-                <div id="t-{{team.number}}-status" class="pt-2"></div>
+                <div class="pt-2 x-lri-status"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -100,10 +99,9 @@
           <div id="overall-status" class="h1 text-end">&nbsp;</div>
           <div id="inspectors">
           {% for i in inspectors %}
-            <div id="i-{{ i.id }}-box" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
-              <span id="i-{{ i.id }}" class="d-none"></span>
+            <div id="i-{{ i.id }}" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
               <div class="h4 m-0">{{ i.name }}:</div>
-              <div id="i-{{ i.id }}-status" class="fs-5">&nbsp;</div>
+              <div class="fs-5 x-lri-status">&nbsp;</div>
             </div>
           {% endfor %}
             <div>
@@ -317,14 +315,14 @@ $(document).ready(function() {
   socket.on('team', function(msg, cb) {
     // $('#log').append('<br>' + $('<div/>').text(JSON.stringify(msg)).html());
     var number = msg.number.toString();
-    $('#t-' + number).text(JSON.stringify(msg));
+    // $('#t-' + number).text(JSON.stringify(msg));
     $('#t-' + number).attr('data-o', JSON.stringify(msg));
 
     var s = msg.status;
     if (s == '') s = '\u00a0';
-    $('#t-' + number + '-status').text(s);
+    $('#t-' + number + ' .x-lri-status').text(s);
 
-    removeClassStartingWith($('#t-' + number + '-box'), 'x-lri-t-');
+    removeClassStartingWith($('#t-' + number), 'x-lri-t-');
     cn = '';
 
     weighed_icon = false;
@@ -339,21 +337,21 @@ $(document).ready(function() {
       cn = 'present';
     }
     if (weighed_icon) {
-      $('#t-' + number + '-box .weighed-icon').show();
+      $('#t-' + number + ' .weighed-icon').show();
     } else {
-      $('#t-' + number + '-box .weighed-icon').hide();
+      $('#t-' + number + ' .weighed-icon').hide();
     }
     if (partially_inspected_icon) {
-      $('#t-' + number + '-box .partially-inspected-icon').show();
+      $('#t-' + number + ' .partially-inspected-icon').show();
     } else {
-      $('#t-' + number + '-box .partially-inspected-icon').hide();
+      $('#t-' + number + ' .partially-inspected-icon').hide();
     }
     if (passed_inspection_icon) {
-      $('#t-' + number + '-box .passed-icon').show();
+      $('#t-' + number + ' .passed-icon').show();
     } else {
-      $('#t-' + number + '-box .passed-icon').hide();
+      $('#t-' + number + ' .passed-icon').hide();
     }
-    $('#t-' + number + '-box').addClass('x-lri-t-' + cn);
+    $('#t-' + number).addClass('x-lri-t-' + cn);
 
     if (cb) cb();
   });
@@ -453,11 +451,11 @@ $(document).ready(function() {
     console.log('inspectors', msg);
     $.each(msg, function( index, inspector ) {
       var inspector_id = inspector.id.toString();
-      $('#i-' + inspector_id + '-box').data('o', inspector)
+      $('#i-' + inspector_id).data('o', inspector)
       // $('#i-' + inspector_id + '-box').text(JSON.stringify(inspector));
-      $('#i-' + inspector_id + '-box').attr('data-o', JSON.stringify(inspector));
+      $('#i-' + inspector_id).attr('data-o', JSON.stringify(inspector));
 
-      $('#i-' + inspector_id + '-status').text(inspector.status_text);
+      $('#i-' + inspector_id + ' .x-lri-status').text(inspector.status_text);
     });
 
     sort_inspectors('#inspectors');
@@ -469,7 +467,7 @@ $(document).ready(function() {
   $('.x-lri-inspector').on('click', function(e) {
     console.log('clicked', e);
     inspector_id = e.currentTarget.dataset.inspectorId;
-    inspector = JSON.parse($('#i-' + inspector_id + '-box').attr('data-o'));
+    inspector = JSON.parse($('#i-' + inspector_id).attr('data-o'));
     console.log("inspector:", inspector);
 
     $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
