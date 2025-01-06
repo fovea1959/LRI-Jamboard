@@ -200,12 +200,6 @@ def send_inspectors(message):
     do_send_inspectors(db_session=get_db_session())
 
 
-def do_send_inspectors_old(db_session=None, emitter=emit):
-    for item in db_session.query(E.Inspector).all():
-        d = item.as_dict()
-        emitter('inspector', d)
-
-
 def get_all_inspectors(db_session=None):
     rv = []
     for item in db_session.query(E.Inspector).all():
@@ -240,7 +234,7 @@ def do_inspector_pulldown(message=None, change_dict=None, db_session=None):
     db_session.commit()
     logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
 
-    socketio.emit('inspector', inspector.as_dict())
+    do_send_inspectors(db_session=db_session, emitter=socketio.emit)
     do_send_time(emitter=socketio.emit)
 
 

@@ -263,6 +263,15 @@ function fiddle_fullscreen() {
   }
 }
 
+function sort_inspectors(selector) {
+  var wrapper = $(selector);
+  wrapper.find('.x-lri-inspector').sort(function(a, b) {
+    var a_v = $(a).data('o').sort_priority;
+    var b_v = $(b).data('o').sort_priority;
+    return a_v - b_v;
+  }).appendTo(wrapper);
+}
+
 $(document).ready(function() {
   $(".weighed-icon").hide();
   $(".passed-icon").hide();
@@ -439,27 +448,19 @@ $(document).ready(function() {
     socket.emit(e.target.id, {'number': number});
   });
 
-  // server sent us information on an inspector
-  socket.on('inspector', function(msg, cb) {
-    var inspector_id = msg.id.toString();
-    $('#i-' + inspector_id).text(JSON.stringify(msg));
-    $('#i-' + inspector_id).attr('data-o', JSON.stringify(msg));
-
-    $('#i-' + inspector_id + '-status').text(msg.status_text);
-
-    if (cb) cb();
-  });
-
   // server sent us information on all inspectors
   socket.on('inspectors', function(msg, cb) {
     console.log('inspectors', msg);
     $.each(msg, function( index, inspector ) {
       var inspector_id = inspector.id.toString();
-      $('#i-' + inspector_id).text(JSON.stringify(inspector));
-      $('#i-' + inspector_id).attr('data-o', JSON.stringify(inspector));
+      $('#i-' + inspector_id + '-box').data('o', inspector)
+      // $('#i-' + inspector_id + '-box').text(JSON.stringify(inspector));
+      $('#i-' + inspector_id + '-box').attr('data-o', JSON.stringify(inspector));
 
       $('#i-' + inspector_id + '-status').text(inspector.status_text);
     });
+
+    sort_inspectors('#inspectors');
 
     if (cb) cb();
   });
@@ -468,7 +469,7 @@ $(document).ready(function() {
   $('.x-lri-inspector').on('click', function(e) {
     console.log('clicked', e);
     inspector_id = e.currentTarget.dataset.inspectorId;
-    inspector = JSON.parse($('#i-' + inspector_id).attr('data-o'));
+    inspector = JSON.parse($('#i-' + inspector_id + '-box').attr('data-o'));
     console.log("inspector:", inspector);
 
     $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
