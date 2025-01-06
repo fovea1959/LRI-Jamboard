@@ -129,3 +129,7 @@ class Inspector(Base):
             return 20000000 - int(self.how_long.total_seconds())
         else:
             return 99999999
+
+    @property
+    def hide(self) -> bool:
+        return self.status in (self.STATUS_GONE, )

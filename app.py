@@ -274,6 +274,15 @@ def inspector_pulldown_gone(message):
     }, db_session=get_db_session())
 
 
+@socketio.on('inspector-pulldown-im')
+def inspector_pulldown_im(message):
+    do_inspector_pulldown(message, {
+        'status': E.Inspector.STATUS_INSPECTION_MANAGER,
+        'with_team': None,
+        'when': None
+    }, db_session=get_db_session())
+
+
 @socketio.on('inspector-pulldown-team')
 def inspector_pulldown_team(message):
     db_session = get_db_session()

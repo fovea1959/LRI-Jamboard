@@ -133,14 +133,20 @@
           </div>
 
           <div id="inspectors">
-          {% for i in inspectors %}
-            <div id="i-{{ i.id }}" class="x-lri-inspector x-lri-i-available my-3" data-inspector-id="{{ i.id }}">
-              <div class="h5 m-0">{{ i.name }}:</div>
-              <div class="fs-6 x-lri-status">&nbsp;</div>
-            </div>
-          {% endfor %}
           </div>
-          <div>
+
+          <p class="d-inline-flex gap-1">
+            <a data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+              <span>
+                <svg class="bi" width="24" height="24" fill="black">
+                  <use xlink:href="/static/bootstrap-icons.svg#person-lines-fill"/>
+                </svg>
+              </span>
+            </a>
+          </p>
+          <div class="collapse" id="collapseExample">
+            <div id="hidden-inspectors">
+            </div>
             <span id="add-inspector-icon">
               <svg class="bi" width="24" height="24" fill="currentColor">
                 <use xlink:href="/static/bootstrap-icons.svg#person-add"/>
@@ -167,6 +173,11 @@
       <use xlink:href="/static/bootstrap-icons.svg#fullscreen-exit"/>
     </svg>
   </div>
+</div>
+
+<div id="i-template" class="x-lri-inspector x-lri-i-available my-3">
+  <div class="h5 x-lri-name m-0"></div>
+  <div class="fs-6 x-lri-status">&nbsp;</div>
 </div>
 
 <!-- the modal for changing team status -->
@@ -216,6 +227,7 @@
           <button id="inspector-pulldown-available" class="btn btn-primary x-lri-inspector-pulldown-item">Available</button>
           <button id="inspector-pulldown-break" class="btn btn-primary x-lri-inspector-pulldown-item">On Break</button>
           <button id="inspector-pulldown-field" class="btn btn-primary x-lri-inspector-pulldown-item">On Field</button>
+          <button id="inspector-pulldown-im" class="btn btn-primary x-lri-inspector-pulldown-item">Inspection Manager</button>
           <button id="inspector-pulldown-gone" class="btn btn-primary x-lri-inspector-pulldown-item">(Gone)</button>
           <span class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -301,7 +313,12 @@ function sort_inspectors(selector) {
   wrapper.find('.x-lri-inspector').sort(function(a, b) {
     var a_v = $(a).data('o').sort_priority;
     var b_v = $(b).data('o').sort_priority;
-    return a_v - b_v;
+    rv = a_v - b_v;
+    if (rv == 0) {
+      a_v = $(a).data('o').name;
+      b_v = $(b).data('o').name;
+    }
+    return rv;
   }).appendTo(wrapper);
 }
 
@@ -486,44 +503,49 @@ $(document).ready(function() {
     console.log('inspectors', msg);
     $.each(msg, function( index, inspector ) {
       var inspector_id = inspector.id.toString();
-      $('#i-' + inspector_id).data('o', inspector);
-      // $('#i-' + inspector_id + '-box').text(JSON.stringify(inspector));
-      $('#i-' + inspector_id).attr('data-o', JSON.stringify(inspector));
+      var inspector_selector = '#i-' + inspector_id;
 
-      $('#i-' + inspector_id + ' .x-lri-status').text(inspector.status_text);
+      if ($(inspector_selector).length == 0) {
+        // inspector is new!
+        var n = $('#i-template').clone();
+        n.attr('id', 'i-' + inspector_id);
+        n.attr('data-inspector-id', inspector_id);
+
+        n.find('.x-lri-name').text(inspector.name);
+        n.appendTo($('#inspectors'));
+
+        // user clicked on this inspector
+        n.on('click', function(e) {
+          console.log('clicked', e);
+          var inspector_id = e.currentTarget.dataset.inspectorId;
+          var j = $('#i-' + inspector_id).attr('data-o');
+          console.log('data-o', j);
+          inspector = JSON.parse(j);
+          console.log("inspector:", inspector);
+
+          $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
+          $('.x-lri-pulldown-inspector-name').text(inspector.name)
+          let modal = new bootstrap.Modal(document.getElementById('inspector-pulldown'));
+          modal.show();
+        });
+      }
+
+      var inspector_jq = $('#i-' + inspector_id);
+
+      inspector_jq.data('o', inspector);
+      inspector_jq.attr('data-o', JSON.stringify(inspector));
+
+      inspector_jq.find('.x-lri-status').text(inspector.status_text);
+
+      var target_div_name = inspector.hide ? '#hidden-inspectors' : '#inspectors';
+      inspector_jq.appendTo($(target_div_name));
+
     });
 
     sort_inspectors('#inspectors');
+    sort_inspectors('#hidden-inspectors');
 
     if (cb) cb();
-  });
-
-  // user clicked on an inspector
-  $('.x-lri-inspector').on('click', function(e) {
-    console.log('clicked', e);
-    inspector_id = e.currentTarget.dataset.inspectorId;
-    inspector = JSON.parse($('#i-' + inspector_id).attr('data-o'));
-    console.log("inspector:", inspector);
-
-    $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
-    $('.x-lri-pulldown-inspector-name').text(inspector.name)
-    let modal = new bootstrap.Modal(document.getElementById('inspector-pulldown'));
-    modal.show();
-  });
-
-  // user clicked on the add inspector icon
-  $('#add-inspector-icon').on('click', function(e) {
-    console.log('clicked', e);
-    let modal = new bootstrap.Modal(document.getElementById('add-inspector-pulldown'));
-    modal.show();
-  });
-
-  // user clicked ok in the add inspector modal
-  $('#add-inspector-ok').on('click', function(e) {
-    console.log('clicked', e);
-    $('#add-inspector-pulldown').modal('hide');
-    var name = $('#add-inspector-name').val();
-    socket.emit('add-inspector', {'name': name});
   });
 
   // user clicked on a button in the inspector modal
@@ -544,6 +566,22 @@ $(document).ready(function() {
     var id = Number($('#inspector-pulldown-inspector-id').text())
     socket.emit('inspector-pulldown-team', {'id': id, 'team': Number(e.target.dataset.teamNumber)})
   });
+
+  // user clicked on the add inspector icon
+  $('#add-inspector-icon').on('click', function(e) {
+    console.log('clicked', e);
+    let modal = new bootstrap.Modal(document.getElementById('add-inspector-pulldown'));
+    modal.show();
+  });
+
+  // user clicked ok in the add inspector modal
+  $('#add-inspector-ok').on('click', function(e) {
+    console.log('clicked', e);
+    $('#add-inspector-pulldown').modal('hide');
+    var name = $('#add-inspector-name').val();
+    socket.emit('add-inspector', {'name': name});
+  });
+
 });
 
 </script>
