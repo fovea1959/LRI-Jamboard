@@ -11,8 +11,8 @@ engine = create_engine('sqlite:///LRI.db', echo=False)
 
 def team_by_number(session: Session = None, team_number: int = None) -> Team:
     stmt = select(Team).where(Team.number == team_number)
-    result = session.scalars(stmt).one()
-    return result
+    result = session.scalars(stmt)
+    return result.one()
 
 
 def inspector_by_id(session: Session = None, inspector_id: int = None) -> Inspector:

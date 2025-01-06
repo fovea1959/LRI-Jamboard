@@ -56,7 +56,7 @@ class Team(Base):
     partially_inspected: Mapped[bool] = mapped_column(Boolean, default=False)
     passed_inspection: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    pit_location: Mapped[Optional[str]] = mapped_column(Text)
+    pit_location: Mapped[str] = mapped_column(Text, default='')
 
     @property
     def status(self) -> str:

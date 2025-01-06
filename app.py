@@ -6,7 +6,7 @@ import sys
 from threading import Lock
 
 import flask
-from flask import Flask, render_template, request, session, copy_current_request_context
+from flask import Flask, render_template, request, session, copy_current_request_context, redirect, url_for
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from flask_socketio import SocketIO, emit, disconnect
@@ -83,6 +83,39 @@ def shutdown_session(response_or_exc):
 @app.errorhandler(NoResultFound)
 def no_result_found_handler(error):
     return render_template('404.html'), 404
+
+
+@app.route('/settings')
+def settings():
+    db_session = get_db_session()
+    teams = []
+    for team in db_session.query(E.Team).all():  # type: E.Team
+        teams.append(team.as_dict())
+    return render_template("settings.html", teams=teams)
+
+
+@app.route('/locations', methods=['POST'])
+def set_locations():
+    logging.info("set_locations got: %s", request.form)
+    flask.flash(str(request.form))
+
+    location_name = request.form.get('location_text', None)
+    if location_name is not None:
+        db_session = get_db_session()
+
+        team_numbers = request.form.getlist('team', int)
+
+        if len(team_numbers) > 0:
+            for team_number_str in team_numbers:
+                team_number = int(team_number_str)
+                logging.info("looking up team %d", team_number)
+                team = Dao.team_by_number(db_session, team_number)
+                logging.info("got team %s", team)
+                team.pit_location = location_name
+                db_session.add(team)
+            db_session.commit()
+
+    return redirect(url_for('settings'))
 
 
 @app.route('/')

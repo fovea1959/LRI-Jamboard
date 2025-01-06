@@ -159,16 +159,20 @@
   </table>
 </div>
 
-<div id="make-fullscreen" class="position-absolute bottom-0 end-0">
-  <div class="m-5">
+<div class="position-absolute bottom-0 end-0">
+  <div class="m-3">
+    <a href="{{ url_for('settings') }}">
+      <svg class="bi" width="24" height="24" fill="black">
+        <use xlink:href="/static/bootstrap-icons.svg#gear-fill"/>
+      </svg>
+    </a>
+  </div>
+  <div id="make-fullscreen" class="m-3">
     <svg class="bi" width="24" height="24" fill="currentColor">
       <use xlink:href="/static/bootstrap-icons.svg#fullscreen"/>
     </svg>
   </div>
-</div>
-
-<div id="exit-fullscreen" class="position-absolute bottom-0 end-0">
-  <div class="m-5">
+  <div id="exit-fullscreen" class="m-3">
     <svg class="bi" width="24" height="24" fill="currentColor">
       <use xlink:href="/static/bootstrap-icons.svg#fullscreen-exit"/>
     </svg>

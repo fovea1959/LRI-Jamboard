@@ -32,7 +32,6 @@ def main(argv):
                 weighed=team_number in (74, 1940, 3620),
                 partially_inspected=team_number in (1940, ),
                 passed_inspection=team_number in (3620, ),
-                pit_location="l" + str(team_number),
             )
             session.add(team)
         session.commit()
