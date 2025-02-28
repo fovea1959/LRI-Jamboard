@@ -15,6 +15,13 @@ import LRIDao as Dao
 import LRIEntities as E
 
 
+def format_time(dt: datetime.datetime):
+    rv = dt.strftime('%I:%M %p')
+    if rv[0] == '0':
+        rv = rv[1:]
+    return rv
+
+
 class MyEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime.datetime):
@@ -398,7 +405,7 @@ def do_send_status(db_session=None, emitter=emit):
 
 
 def do_send_time(emitter=emit):
-    rv = G(time=datetime.datetime.now().strftime('%l:%M %p'))
+    rv = G(time=format_time(datetime.datetime.now()))
     emitter('time', rv)
 
 

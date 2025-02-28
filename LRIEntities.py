@@ -10,6 +10,12 @@ from sqlalchemy.orm import DeclarativeBase, mapped_column, relationship
 from sqlalchemy.orm.base import Mapped
 
 
+def format_time(dt: datetime.datetime):
+    rv = dt.strftime('%I:%M %p')
+    if rv[0] == '0':
+        rv = rv[1:]
+    return rv
+
 class Base(DeclarativeBase):
     # https://stackoverflow.com/a/11884806
     def as_dict(self, *args) -> dict:
@@ -88,6 +94,7 @@ class Inspector(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
+    lri: Mapped[bool] = mapped_column()
     status: Mapped[str] = mapped_column(Text)
     with_team: Mapped[Optional[int]] = mapped_column(Integer)
     when: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
@@ -105,7 +112,7 @@ class Inspector(Base):
         if self.with_team is not None:
             rv = rv + f" {self.with_team}"
         if self.when is not None:
-            rv = rv + " since " + self.when.strftime('%l:%M %p')
+            rv = rv + " since " + format_time(self.when)
             seconds = self.how_long.total_seconds()
             if seconds >= (20 * 60):
                 # https://stackoverflow.com/a/539360
@@ -127,6 +134,8 @@ class Inspector(Base):
 
     @property
     def sort_priority(self) -> int:
+        if self.lri:
+            return 10
         if self.status == self.STATUS_INSPECTION_MANAGER:
             return 0
         elif self.status == self.STATUS_AVAILABLE:
@@ -140,4 +149,4 @@ class Inspector(Base):
 
     @property
     def hide(self) -> bool:
-        return self.status in (self.STATUS_GONE, )
+        return self.status in (self.STATUS_GONE, ) and not self.lri

@@ -11,23 +11,23 @@
 
 // see https://stackoverflow.com/a/27704409 for why we include the table id
 
-#team-table .x-lri-t-present {
+#team-table .x-ri-t-present {
   background-color: #ffffff;
 }
 
-#team-table .x-lri-t-passed-inspection {
+#team-table .x-ri-t-passed-inspection {
   background-color: #80ff80;
 }
 
-#team-table .x-lri-t- {
+#team-table .x-ri-t- {
   background-color: #c0c0c0;
 }
 
-#team-table .x-lri-blank {
+#team-table .x-ri-blank {
   background-color: #c0c0c0;
 }
 
-#page-table .x-lri-blank {
+#page-table .x-ri-blank {
   background-color: var(--bs-border-color);
 }
 
@@ -57,9 +57,9 @@
           {% for g in row %}
             {% set team=g.team %}
             {% if team is none %}
-              <td class="x-lri-blank"></td>
+              <td class="x-ri-blank"></td>
             {% else %}
-              <td id="t-{{team.number}}" class="x-lri-t- cm x-lri-team" data-team-number="{{team.number}}">
+              <td id="t-{{team.number}}" class="x-ri-t- cm x-ri-team" data-team-number="{{team.number}}">
                 <div class="h1">
                   <span>
                     {{ team.number }}
@@ -88,8 +88,8 @@
                 <div>
                   <span class="fs-6">{{ team.pit_location }}</span>
                 </div>
-                <div class="pt-2 x-lri-status d-none"></div>
-                <div class="pt-2 x-lri-inspector-names"></div>
+                <div class="pt-2 x-ri-status d-none"></div>
+                <div class="pt-2 x-ri-inspector-names"></div>
               </td>
             {% endif %}
           {% endfor %}
@@ -97,7 +97,7 @@
         {% endfor %}
         </table>
       </td>
-      <td class="col-2 x-lri-blank">
+      <td class="col-2 x-ri-blank">
         <div>
           <div class="h2 text-end">
             <span id="time">&nbsp;</span>
@@ -179,9 +179,16 @@
   </div>
 </div>
 
-<div id="i-template" class="x-lri-inspector x-lri-i-available my-3">
-  <div class="h5 x-lri-name m-0"></div>
-  <div class="fs-6 x-lri-status">&nbsp;</div>
+<div id="i-template" class="x-ri-inspector x-ri-i-available my-3">
+  <div class="h5 m-0">
+    <span class="x-ri-name"></span>
+    <span class="x-lri-icon">
+      <svg class="bi" width="24" height="24" fill="currentColor">
+        <use xlink:href="/static/bootstrap-icons.svg#emoji-sunglasses"/>
+      </svg>
+    </span>
+  </div>
+  <div class="fs-6 x-ri-status">&nbsp;</div>
 </div>
 
 <!-- the modal for changing team status -->
@@ -190,24 +197,24 @@
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title">
-          Change status for <span id="team-pulldown-team-number" class="x-lri-pulldown-team-number"></span>
+          Change status for <span id="team-pulldown-team-number" class="x-ri-pulldown-team-number"></span>
         </h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="h5 x-lri-pulldown-team-name">
+        <div class="h5 x-ri-pulldown-team-name">
         </div>
       </div>
       <div class="modal-footer justify-content-between">
         <span>
-          <button id="team-pulldown-see" class="btn btn-primary x-lri-team-pulldown-item">Mark Seen</button>
-          <button id="team-pulldown-unsee" class="btn btn-primary x-lri-team-pulldown-item">Unmark Seen</button>
-          <button id="team-pulldown-weigh" class="btn btn-primary x-lri-team-pulldown-item">Mark Weighed</button>
-          <button id="team-pulldown-unweigh" class="btn btn-primary x-lri-team-pulldown-item">Unmark Weighed</button>
-          <button id="team-pulldown-partial" class="btn btn-primary x-lri-team-pulldown-item">Mark Partially Inspected</button>
-          <button id="team-pulldown-unpartial" class="btn btn-primary x-lri-team-pulldown-item">Unmark Partially Inspected</button>
-          <button id="team-pulldown-pass" class="btn btn-primary x-lri-team-pulldown-item">Mark Passed Inspection</button>
-          <button id="team-pulldown-unpass" class="btn btn-primary x-lri-team-pulldown-item">Unmark Passed Inspection</button>
+          <button id="team-pulldown-see" class="btn btn-primary x-ri-team-pulldown-item">Mark Seen</button>
+          <button id="team-pulldown-unsee" class="btn btn-primary x-ri-team-pulldown-item">Unmark Seen</button>
+          <button id="team-pulldown-weigh" class="btn btn-primary x-ri-team-pulldown-item">Mark Weighed</button>
+          <button id="team-pulldown-unweigh" class="btn btn-primary x-ri-team-pulldown-item">Unmark Weighed</button>
+          <button id="team-pulldown-partial" class="btn btn-primary x-ri-team-pulldown-item">Mark Partially Inspected</button>
+          <button id="team-pulldown-unpartial" class="btn btn-primary x-ri-team-pulldown-item">Unmark Partially Inspected</button>
+          <button id="team-pulldown-pass" class="btn btn-primary x-ri-team-pulldown-item">Mark Passed Inspection</button>
+          <button id="team-pulldown-unpass" class="btn btn-primary x-ri-team-pulldown-item">Unmark Passed Inspection</button>
         </span>
       </div>
     </div>
@@ -221,18 +228,18 @@
       <div class="modal-header">
         <h1 class="modal-title">
           Change status for
-          <span class="x-lri-pulldown-inspector-name"></span>
-          <span id="inspector-pulldown-inspector-id" class="x-lri-pulldown-inspector-id d-none"></span>
+          <span class="x-ri-pulldown-inspector-name"></span>
+          <span id="inspector-pulldown-inspector-id" class="x-ri-pulldown-inspector-id d-none"></span>
         </h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-footer justify-content-between">
         <span>
-          <button id="inspector-pulldown-available" class="btn btn-primary x-lri-inspector-pulldown-item">Available</button>
-          <button id="inspector-pulldown-break" class="btn btn-primary x-lri-inspector-pulldown-item">On Break</button>
-          <button id="inspector-pulldown-field" class="btn btn-primary x-lri-inspector-pulldown-item">On Field</button>
-          <button id="inspector-pulldown-im" class="btn btn-primary x-lri-inspector-pulldown-item">Inspection Manager</button>
-          <button id="inspector-pulldown-gone" class="btn btn-primary x-lri-inspector-pulldown-item">(Gone)</button>
+          <button id="inspector-pulldown-available" class="btn btn-primary x-ri-inspector-pulldown-item">Available</button>
+          <button id="inspector-pulldown-break" class="btn btn-primary x-ri-inspector-pulldown-item">On Break</button>
+          <button id="inspector-pulldown-field" class="btn btn-primary x-ri-inspector-pulldown-item">On Field</button>
+          <button id="inspector-pulldown-im" class="btn btn-primary x-ri-inspector-pulldown-item">Inspection Manager</button>
+          <button id="inspector-pulldown-gone" class="btn btn-primary x-ri-inspector-pulldown-item">(Gone)</button>
           <span class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               With team...
@@ -244,7 +251,7 @@
                 {% set list_length = (((team_data|length) + 2) / 3)|int %}
                 {% for g in team_data %}
                   {% set team = g.team %}
-                  <a class="dropdown-item x-lri-inspector-pulldown-with-team" href="#" data-team-number="{{ team.number }}">{{ team.number }}: {{ team.name }}</a>
+                  <a class="dropdown-item x-ri-inspector-pulldown-with-team" href="#" data-team-number="{{ team.number }}">{{ team.number }}: {{ team.name }}</a>
                   {% if (loop.index % list_length) == 0 %}
                 </div>
                 <div class="col-4">
@@ -314,7 +321,7 @@ function fiddle_fullscreen() {
 
 function sort_inspectors(selector) {
   var wrapper = $(selector);
-  wrapper.find('.x-lri-inspector').sort(function(a, b) {
+  wrapper.find('.x-ri-inspector').sort(function(a, b) {
     var a_v = $(a).data('o').sort_priority;
     var b_v = $(b).data('o').sort_priority;
     rv = a_v - b_v;
@@ -377,11 +384,11 @@ $(document).ready(function() {
 
     var s = msg.status;
     if (s == '') s = '\u00a0';
-    $('#t-' + number + ' .x-lri-status').text(s);
+    $('#t-' + number + ' .x-ri-status').text(s);
 
-    $('#t-' + number + ' .x-lri-inspector-names').text(msg.inspector_names)
+    $('#t-' + number + ' .x-ri-inspector-names').text(msg.inspector_names)
 
-    removeClassStartingWith($('#t-' + number), 'x-lri-t-');
+    removeClassStartingWith($('#t-' + number), 'x-ri-t-');
     cn = '';
 
     weighed_icon = false;
@@ -410,7 +417,7 @@ $(document).ready(function() {
     } else {
       $('#t-' + number + ' .passed-icon').hide();
     }
-    $('#t-' + number).addClass('x-lri-t-' + cn);
+    $('#t-' + number).addClass('x-ri-t-' + cn);
 
     if (cb) cb();
   });
@@ -432,7 +439,7 @@ $(document).ready(function() {
   });
 
   // user clicked on a team
-  $('.x-lri-team').on('click', function(e) {
+  $('.x-ri-team').on('click', function(e) {
     console.log('clicked', e);
     team_number = e.currentTarget.dataset.teamNumber;
     team = JSON.parse($('#t-' + team_number).attr('data-o'));
@@ -490,14 +497,14 @@ $(document).ready(function() {
       $('#team-pulldown-unpartial').hide();
     }
 
-    $('.x-lri-pulldown-team-number').text(team.number.toString());
-    $('.x-lri-pulldown-team-name').text(team.name);
+    $('.x-ri-pulldown-team-number').text(team.number.toString());
+    $('.x-ri-pulldown-team-name').text(team.name);
     let modal = new bootstrap.Modal(document.getElementById('team-pulldown'));
     modal.show();
   });
 
   // user clicked on a button in the team modal
-  $('.x-lri-team-pulldown-item').on('click', function(e) {
+  $('.x-ri-team-pulldown-item').on('click', function(e) {
     console.log('clicked', e);
     console.log('button id is', e.target.id);
     $('#team-pulldown').modal('hide');
@@ -518,7 +525,10 @@ $(document).ready(function() {
         n.attr('id', 'i-' + inspector_id);
         n.attr('data-inspector-id', inspector_id);
 
-        n.find('.x-lri-name').text(inspector.name);
+        if (!inspector.lri) {
+          n.find('.x-lri-icon').hide()
+        }
+        n.find('.x-ri-name').text(inspector.name);
         n.appendTo($('#inspectors'));
 
         // user clicked on this inspector
@@ -530,8 +540,8 @@ $(document).ready(function() {
           inspector = JSON.parse(j);
           console.log("inspector:", inspector);
 
-          $('.x-lri-pulldown-inspector-id').text(inspector.id.toString())
-          $('.x-lri-pulldown-inspector-name').text(inspector.name)
+          $('.x-ri-pulldown-inspector-id').text(inspector.id.toString())
+          $('.x-ri-pulldown-inspector-name').text(inspector.name)
           let modal = new bootstrap.Modal(document.getElementById('inspector-pulldown'));
           modal.show();
         });
@@ -542,7 +552,7 @@ $(document).ready(function() {
       inspector_jq.data('o', inspector);
       inspector_jq.attr('data-o', JSON.stringify(inspector));
 
-      inspector_jq.find('.x-lri-status').text(inspector.status_text);
+      inspector_jq.find('.x-ri-status').text(inspector.status_text);
 
       var target_div_name = inspector.hide ? '#hidden-inspectors' : '#inspectors';
       inspector_jq.appendTo($(target_div_name));
@@ -556,7 +566,7 @@ $(document).ready(function() {
   });
 
   // user clicked on a button in the inspector modal
-  $('.x-lri-inspector-pulldown-item').on('click', function(e) {
+  $('.x-ri-inspector-pulldown-item').on('click', function(e) {
     console.log('clicked', e);
     console.log('button id is', e.target.id);
     $('#inspector-pulldown').modal('hide');
@@ -565,7 +575,7 @@ $(document).ready(function() {
   });
 
   // user clicked on a team number in the inspector modal
-  $('.x-lri-inspector-pulldown-with-team').on('click', function(e) {
+  $('.x-ri-inspector-pulldown-with-team').on('click', function(e) {
     console.log('clicked', e);
     console.log('button id is', e.target.id);
     console.log('button team number is', e.target.dataset.teamNumber);
