@@ -42,6 +42,31 @@
 .complete-color {
   color: #00c000;
 }
+
+.x-ri-team.team-location-red {
+  border-color: red;
+}
+
+.x-ri-team.team-location-yellow {
+  --bs-border-opacity: 1;
+  border-color: rgba(yellow,var(--bs-border-opacity)) !important;
+}
+
+.x-ri-team.team-location-black {
+  border-color: black;
+}
+
+.x-ri-team.team-location-blue {
+  border-color: blue;
+}
+
+.x-ri-team.team-location-green {
+  border-color: green;
+}
+
+.x-ri-team.team-location-purple {
+  border-color: fuchsia;
+}
 </style>
 {% endblock %}
 
@@ -59,6 +84,9 @@
             {% if team is none %}
               <td class="x-ri-blank"></td>
             {% else %}
+              {# we did have this in the class to try to get colored borders:
+                 class="border border-5 team-location-{{team.pit_location.lower()}}"
+              #}
               <td id="t-{{team.number}}" class="x-ri-t- cm x-ri-team" data-team-number="{{team.number}}">
                 <div class="h1">
                   <span>
