@@ -179,12 +179,12 @@
   </div>
 </div>
 
-<div id="i-template" class="x-ri-inspector x-ri-i-available my-3">
+<div id="i-template" class="x-ri-inspector x-ri-i-available my-3 d-none">
   <div class="h5 m-0">
     <span class="x-ri-name"></span>
     <span class="x-lri-icon">
       <svg class="bi" width="24" height="24" fill="currentColor">
-        <use xlink:href="/static/bootstrap-icons.svg#emoji-sunglasses"/>
+        <use xlink:href="/static/bootstrap-icons.svg#person-hearts"/>
       </svg>
     </span>
   </div>
@@ -522,6 +522,7 @@ $(document).ready(function() {
       if ($(inspector_selector).length == 0) {
         // inspector is new!
         var n = $('#i-template').clone();
+        n.removeClass('d-none');
         n.attr('id', 'i-' + inspector_id);
         n.attr('data-inspector-id', inspector_id);
 
