@@ -381,6 +381,7 @@ def add_inspector(message):
             name=name,
             status=E.Inspector.STATUS_AVAILABLE,
             when=None,
+            lri=False,
         )
         db_session.add(inspector)
         db_session.commit()
