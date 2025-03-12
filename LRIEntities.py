@@ -94,7 +94,7 @@ class Inspector(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
-    lri: Mapped[bool] = mapped_column()
+    lri: Mapped[bool] = mapped_column(default=False)
     status: Mapped[str] = mapped_column(Text)
     with_team: Mapped[Optional[int]] = mapped_column(Integer)
     when: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
