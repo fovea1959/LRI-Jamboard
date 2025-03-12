@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import json
 import logging
@@ -459,9 +460,13 @@ def disconnect():
     print('Client disconnected', request.sid)
 
 
-def main():
+def main(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--event', required=True)
+    args = parser.parse_args(argv)
+
     global Session
-    Session = sessionmaker(bind=Dao.engine('2025miber.db'))
+    Session = sessionmaker(bind=Dao.engine(f'{args.event}.db'))
     app.secret_key = 'super secret key'
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.debug = True
@@ -503,4 +508,4 @@ if __name__ == '__main__':
     logging.getLogger("sqlalchemy.pool").setLevel(logging.DEBUG)
     logging.getLogger('socketio.server').setLevel(logging.WARNING)
     logging.getLogger('engineio.server').setLevel(logging.WARNING)
-    main()
+    main(sys.argv[1:])

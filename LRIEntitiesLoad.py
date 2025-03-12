@@ -15,7 +15,7 @@ def main(argv):
     parser.add_argument('--teams', action='store_true')
     parser.add_argument('--inspectors', action='store_true')
     parser.add_argument('--create', action='store_true')
-    parser.add_argument('--event')
+    parser.add_argument('--event', required=True)
     args = parser.parse_args(argv)
 
     db_filename = f'{args.event}.db'
