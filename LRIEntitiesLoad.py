@@ -12,27 +12,30 @@ from LRIEntities import *
 
 def main(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--teams', action='store_true')
+    parser.add_argument('--inspectors', action='store_true')
     parser.add_argument('--create', action='store_true')
-    parser.add_argument('--teams')
-    parser.add_argument('--inspectors')
+    parser.add_argument('--event')
     args = parser.parse_args(argv)
 
+    db_filename = f'{args.event}.db'
     if args.create:
-        logging.info ("Deleting database file")
+        logging.info ("Deleting database file %s", db_filename)
         try:
-            os.remove('LRI.db')
+            os.remove(db_filename)
             logging.info("...deleted")
         except FileNotFoundError:
             pass
-        logging.info ("Creating database file")
-        Base.metadata.create_all(Dao.engine)
+        logging.info ("Creating database file %s", db_filename)
+        Base.metadata.create_all(Dao.engine(db_filename))
         logging.info("...created")
 
-    with (Session(Dao.engine) as session):
+    with (Session(Dao.engine(db_filename)) as session):
         if args.teams:
-            with open(args.teams, 'r') as f:
+            teams_filename = f'{args.event}_teams.json'
+            with open(teams_filename, 'r') as f:
                 blue_alliance = json.load(f)
-            logging.info("read %d teams from %s", len(blue_alliance), args.teams)
+            logging.info("read %d teams from %s", len(blue_alliance), teams_filename)
 
             if len(blue_alliance) > 0:
                 num_rows_deleted = session.query(Team).delete()
@@ -51,12 +54,13 @@ def main(argv):
 
         if args.inspectors:
             names = []
-            with open(args.inspectors, 'r') as file:
+            inspectors_filename = f'{args.event}_inspectors.txt'
+            with open(inspectors_filename, 'r') as file:
                 for line in file:
                     name = line.strip()
                     if len(name) > 0:
                         names.append(name)
-            logging.info("read %d inspectors from %s", len(names), args.inspectors)
+            logging.info("read %d inspectors from %s", len(names), inspectors_filename)
 
             if len(names) > 0:
                 num_rows_deleted = session.query(Inspector).delete()
