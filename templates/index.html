@@ -291,7 +291,7 @@
           </span>
         </span>
         <span class="">
-          <svg class="bi" width="24" height="24" fill="currentColor">
+          <svg id="inspector-pulldown-delete" class="bi x-ri-inspector-pulldown-item" width="24" height="24" fill="currentColor">
             <use xlink:href="/static/bootstrap-icons.svg#person-dash"/>
           </svg>
         </span>
@@ -592,6 +592,15 @@ $(document).ready(function() {
     sort_inspectors('#hidden-inspectors');
 
     if (cb) cb();
+  });
+
+  // server told us to delete an inspector
+  socket.on('delete-inspector', function(msg, cb) {
+    console.log('delete-inspector', msg);
+    var inspector_id = msg.id.toString();
+    var inspector_selector = '#i-' + inspector_id;
+    var c = $(inspector_selector).remove();
+    console.log('deleted ', c);
   });
 
   // user clicked on a button in the inspector modal

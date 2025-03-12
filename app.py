@@ -44,7 +44,7 @@ class MyAwesomeJsonWrapper(object):
         return json.loads(*args, **kwargs)
 
 
-Session = sessionmaker(bind=Dao.engine)
+Session = None
 app = Flask(__name__)
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
@@ -266,30 +266,40 @@ def debug_inspectors():
     return rv
 
 
-def perform_inspector_pulldown_action(message=None, change_dict=None, db_session=None):
-    logging.info('doing inspector pulldown: %s %s', message, change_dict)
-    if change_dict is None:
-        return
-
-    teams_to_update = set()
+def perform_inspector_pulldown_action(message=None, change_dict=None, db_session=None, do_delete=False):
+    logging.info('doing inspector pulldown: %s %s do_delete=%s', message, change_dict, do_delete)
 
     inspector = Dao.inspector_by_id(db_session, message.get('id', None))
-
-    if inspector.with_team is not None:
-        teams_to_update.add(inspector.with_team)
-
     logging.info('i_pulldown: i before = %s', inspector.as_dict())
-    for n, v in change_dict.items():
-        setattr(inspector, n, v)
-    logging.info('i_pulldown: i after  = %s', inspector.as_dict())
 
+    teams_to_update = set()
     if inspector.with_team is not None:
+        # update the team that the inspector was with
         teams_to_update.add(inspector.with_team)
 
-    db_session.add(inspector)
-    logging.debug('Committing %s (inspector)', db_session.connection().connection.dbapi_connection)
-    db_session.commit()
-    logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
+    if do_delete:
+        db_session.delete(inspector)
+        logging.info('i_pulldown: deleted inspector')
+        emit('delete-inspector', message) # message will have id
+        logging.debug('Committing %s (inspector)', db_session.connection().connection.dbapi_connection)
+        db_session.commit()
+        logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
+    else:
+        if change_dict is None:
+            return
+
+        for n, v in change_dict.items():
+            setattr(inspector, n, v)
+        logging.info('i_pulldown: i after  = %s', inspector.as_dict())
+
+        if inspector.with_team is not None:
+            # update the team that the inspector is now with
+            teams_to_update.add(inspector.with_team)
+
+        db_session.add(inspector)
+        logging.debug('Committing %s (inspector)', db_session.connection().connection.dbapi_connection)
+        db_session.commit()
+        logging.debug('Committed  %s (inspector)', db_session.connection().connection.dbapi_connection)
 
     if len(teams_to_update) > 0:
         team_with_inspector_dict = Dao.inspectors_with_team_dict(db_session)
@@ -346,6 +356,12 @@ def inspector_pulldown_im(message):
         'with_team': None,
         'when': None
     }, db_session=get_db_session())
+
+
+@socketio.on('inspector-pulldown-delete')
+def inspector_pulldown_delete(message):
+    perform_inspector_pulldown_action(message, {}, do_delete=True,
+        db_session=get_db_session())
 
 
 @socketio.on('inspector-pulldown-team')
@@ -444,6 +460,8 @@ def disconnect():
 
 
 def main():
+    global Session
+    Session = sessionmaker(bind=Dao.engine('2025miber.db'))
     app.secret_key = 'super secret key'
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.debug = True
